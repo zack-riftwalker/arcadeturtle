@@ -139,13 +139,16 @@ class Renderer:
         self.stamps = [s for s in self.stamps if s.stamp_id != stamp_id]
 
     def clear_stamps_of(self, turtle_id: int, n: int | None = None) -> None:
+        """همان معناشناسی RawTurtle.clearstamps: None = همه، n >= 0 = n تای اول،
+        n < 0 = n تای آخر. توجه: n == 0 برش خالی است و هیچ مهری پاک نمی‌شود."""
         mine = [s for s in self.stamps if s.turtle_id == turtle_id]
-        if n is None or n == 0:
-            remove = set(id(s) for s in mine)
-        elif n > 0:
-            remove = set(id(s) for s in mine[:n])
+        if n is None:
+            doomed = mine
+        elif n >= 0:
+            doomed = mine[:n]
         else:
-            remove = set(id(s) for s in mine[n:])
+            doomed = mine[n:]
+        remove = {id(s) for s in doomed}
         self.stamps = [s for s in self.stamps if id(s) not in remove]
 
     def add_text(self, turtle_id: int, text: "arcade.Text") -> None:

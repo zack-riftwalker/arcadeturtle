@@ -33,12 +33,23 @@ def resolve_key(name: str) -> int:
             f"نام کلید باید یک رشته باشد، مثل \"Up\" یا \"space\" — نه {name!r}"
         )
     low = name.lower()
-    if len(low) == 1 and low.isalpha() and low.isascii():
-        return getattr(arcade.key, low.upper())
-    if len(low) == 1 and low.isdigit():
-        return getattr(arcade.key, f"KEY_{low}")
+    # نکته: isalpha()/isdigit() برای حروف و ارقام غیرانگلیسی هم True هستند
+    # (مثلاً "۵" فارسی یا "²")، پس isascii() برای هر دو شاخه لازم است — وگرنه
+    # getattr با AttributeError خام می‌ترکد به‌جای پیام مهربان پایین.
+    attr = None
     if low in _SPECIAL_KEYS:
-        return getattr(arcade.key, _SPECIAL_KEYS[low])
+        attr = _SPECIAL_KEYS[low]
+    elif len(low) == 1 and low.isascii():
+        if low.isalpha():
+            attr = low.upper()
+        elif low.isdigit():
+            attr = f"KEY_{low}"
+
+    if attr is not None:
+        key = getattr(arcade.key, attr, None)
+        if key is not None:
+            return key
+
     samples = '"Up", "Down", "Left", "Right", "space", "Return", "Escape", "a" تا "z", "0" تا "9", "F1" تا "F12"'
     raise ArcadeTurtleError(
         f"کلید '{name}' را نمی‌شناسم. ⌨️\nنمونه کلیدهای درست: {samples}"

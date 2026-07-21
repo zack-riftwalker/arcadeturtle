@@ -104,6 +104,47 @@ def test_persian_detection_and_shaping():
     assert shape_text("hello") == "hello"
 
 
+def test_clearstamps_matches_stdlib_slicing():
+    """RawTurtle.clearstamps: None = همه، n >= 0 = n تای اول، n < 0 = n تای آخر.
+
+    نکته‌ی کلیدی: n == 0 یک برش خالی است و باید هیچ مهری را پاک نکند —
+    قبلاً این حالت با None اشتباه گرفته می‌شد و همه را پاک می‌کرد.
+    """
+    from arcadeturtle import Turtle
+
+    t = Turtle()
+    t.speed(0)
+    eng = get_engine()
+
+    def stamp_four():
+        eng.renderer.stamps.clear()
+        for _ in range(4):
+            t.stamp()
+            t.forward(20)
+        eng.tick(1 / 60)
+
+    stamp_four()
+    assert len(eng.renderer.stamps) == 4
+    t.clearstamps(0)
+    eng.tick(1 / 60)
+    assert len(eng.renderer.stamps) == 4, "n=0 نباید هیچ مهری را پاک کند"
+
+    ids = [s.stamp_id for s in eng.renderer.stamps]
+    t.clearstamps(2)  # دو تای اول
+    eng.tick(1 / 60)
+    assert [s.stamp_id for s in eng.renderer.stamps] == ids[2:]
+
+    stamp_four()
+    ids = [s.stamp_id for s in eng.renderer.stamps]
+    t.clearstamps(-1)  # آخری
+    eng.tick(1 / 60)
+    assert [s.stamp_id for s in eng.renderer.stamps] == ids[:-1]
+
+    t.clearstamps()  # همه
+    eng.tick(1 / 60)
+    assert eng.renderer.stamps == []
+
+
 def test_turtle_clear_only_removes_own_drawings():
     """Turtle.clear() فقط نقاشی‌های خودش را پاک می‌کند؛ Screen.clear() همه را.
 

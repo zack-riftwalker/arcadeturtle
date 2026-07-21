@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import atexit
 import math
+import sys
 from collections import deque
 from dataclasses import dataclass
 from enum import Enum
@@ -189,18 +190,37 @@ class Engine:
 
 _engine: Engine | None = None
 _atexit_registered = False
+_died_with_exception = False
+
+
+def _install_excepthook() -> None:
+    """اگر اسکریپت با یک خطای واقعی بمیرد علامت می‌زند.
+
+    بدون این، هنرجویی که برنامه‌اش با خطای خودش کرش کرده بعد از traceback
+    واقعی پیام «done() را فراموش کرده‌ای» را هم می‌بیند و دنبال مشکل اشتباه
+    می‌رود. به‌جای sys.last_value (که رفتارش بین ۳.۱۰ تا ۳.۱۳ فرق دارد)
+    این‌جا hook قبلی را زنجیر می‌کنیم تا با pytest/IDE هم تداخل نکند.
+    """
+    previous = sys.excepthook
+
+    def hook(exc_type, exc, tb):
+        global _died_with_exception
+        _died_with_exception = True
+        previous(exc_type, exc, tb)
+
+    sys.excepthook = hook
 
 
 def _warn_if_done_forgotten() -> None:
     eng = _engine
-    if eng is not None and not eng._ran and eng.turtles:
-        import sys
-        print(
-            "\n⚠️  به نظر می‌رسد done() را فراموش کرده‌ای؛ "
-            "بدون آن پنجره هرگز باز نمی‌شود.\n"
-            "    آخرین خط برنامه‌ات را با turtle.done() تمام کن.\n",
-            file=sys.stderr,
-        )
+    if eng is None or eng._ran or not eng.turtles or _died_with_exception:
+        return
+    print(
+        "\n⚠️  به نظر می‌رسد done() را فراموش کرده‌ای؛ "
+        "بدون آن پنجره هرگز باز نمی‌شود.\n"
+        "    آخرین خط برنامه‌ات را با turtle.done() تمام کن.\n",
+        file=sys.stderr,
+    )
 
 
 def get_engine() -> Engine:
@@ -209,6 +229,7 @@ def get_engine() -> Engine:
         _engine = Engine()
         if not _atexit_registered:
             atexit.register(_warn_if_done_forgotten)
+            _install_excepthook()
             _atexit_registered = True
     return _engine
 

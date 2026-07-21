@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 
 import arcadeturtle
@@ -51,6 +53,39 @@ def test_forgot_done_warning_fires(capsys):
     out = capsys.readouterr()
     assert "done()" in out.err
     assert "فراموش کرده‌ای" in out.err
+
+
+def test_no_forgot_done_warning_when_script_crashed(capsys):
+    """اگر اسکریپت با خطای واقعی خودش مرده باشد، پیام done() گمراه‌کننده است."""
+    from arcadeturtle._engine import _warn_if_done_forgotten
+    import arcadeturtle._engine as engine_module
+
+    arcadeturtle.forward(10)
+    engine_module._engine._ran = False
+    engine_module._died_with_exception = True
+    try:
+        _warn_if_done_forgotten()
+        assert capsys.readouterr().err == ""
+    finally:
+        engine_module._died_with_exception = False
+
+
+def test_excepthook_wrapper_sets_flag_and_chains():
+    """hook باید فلگ را ست کند و hook قبلی را هم صدا بزند."""
+    import arcadeturtle._engine as engine_module
+
+    calls = []
+    original = sys.excepthook
+    sys.excepthook = lambda *a: calls.append(a)
+    try:
+        engine_module._died_with_exception = False
+        engine_module._install_excepthook()
+        sys.excepthook(ValueError, ValueError("boom"), None)
+        assert engine_module._died_with_exception is True
+        assert len(calls) == 1, "hook قبلی باید زنجیر شود، نه دور زده"
+    finally:
+        sys.excepthook = original
+        engine_module._died_with_exception = False
 
 
 def test_no_warning_after_done_or_reset(capsys):

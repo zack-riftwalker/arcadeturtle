@@ -34,6 +34,14 @@ def test_unknown_key_friendly_error():
     assert "نمی‌شناسم" in str(e.value)
 
 
+@pytest.mark.parametrize("key", ["۵", "٣", "²", "ب", "ç"])
+def test_non_ascii_key_gives_friendly_error_not_attributeerror(key):
+    """ارقام/حروف غیرانگلیسی هم isdigit()/isalpha() را True می‌کنند؛ بدون
+    محافظ isascii() اینجا AttributeError خام بیرون می‌زد."""
+    with pytest.raises(ArcadeTurtleError):
+        resolve_key(key)
+
+
 def test_onkey_binding_and_dispatch():
     import arcade.key
     hits = []
