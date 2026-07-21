@@ -11,6 +11,7 @@
 
 from __future__ import annotations
 
+import atexit
 import math
 from collections import deque
 from dataclasses import dataclass
@@ -187,16 +188,36 @@ class Engine:
 
 
 _engine: Engine | None = None
+_atexit_registered = False
+
+
+def _warn_if_done_forgotten() -> None:
+    eng = _engine
+    if eng is not None and not eng._ran and eng.turtles:
+        import sys
+        print(
+            "\n⚠️  به نظر می‌رسد done() را فراموش کرده‌ای؛ "
+            "بدون آن پنجره هرگز باز نمی‌شود.\n"
+            "    آخرین خط برنامه‌ات را با turtle.done() تمام کن.\n",
+            file=sys.stderr,
+        )
 
 
 def get_engine() -> Engine:
-    global _engine
+    global _engine, _atexit_registered
     if _engine is None:
         _engine = Engine()
+        if not _atexit_registered:
+            atexit.register(_warn_if_done_forgotten)
+            _atexit_registered = True
     return _engine
 
 
 def reset_engine() -> None:
-    """فقط برای تست‌ها."""
+    """فقط برای تست‌ها — موتور فعلی را «مصرف‌شده» علامت می‌زند تا هشدار
+    فراموشیِ done() برای اسکریپت‌های آزمایشی که عمداً done() صدا نمی‌زنند
+    نمایش داده نشود."""
     global _engine
+    if _engine is not None:
+        _engine._ran = True
     _engine = None
