@@ -97,6 +97,17 @@ def test_no_warning_after_done_or_reset(capsys):
     assert out.err == ""
 
 
+def test_write_move_true_raises_instead_of_silently_ignoring():
+    with pytest.raises(ArcadeTurtleError) as e:
+        arcadeturtle.write("x", move=True)
+    assert "پشتیبانی نمی‌شود" in str(e.value)
+
+
+def test_write_without_move_is_accepted():
+    arcadeturtle.write("x")            # نباید خطا بدهد
+    arcadeturtle.write("x", move=False)
+
+
 def test_unsupported_setup_fraction_message():
     from arcadeturtle import Screen
     with pytest.raises(ArcadeTurtleError) as e:

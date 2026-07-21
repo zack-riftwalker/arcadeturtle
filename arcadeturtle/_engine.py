@@ -14,6 +14,7 @@ from __future__ import annotations
 import atexit
 import math
 import sys
+import weakref
 from collections import deque
 from dataclasses import dataclass
 from enum import Enum
@@ -44,6 +45,10 @@ class Engine:
         self.mode = Mode.RECORDING
         self.queue: deque = deque()
         self.turtles: dict[int, TurtleRuntime] = {}
+        # شیءهای Turtle کاربر — weak تا لاک‌پشت دورریخته نشتی حافظه نسازد.
+        # Screen.reset() برای ریست‌کردن همه لاک‌پشت‌ها به این نیاز دارد، چون
+        # Turtle.reset() به فیلدهای روی خود شیء (مثل _pen_color_raw) دست می‌زند.
+        self.turtle_objects: weakref.WeakSet = weakref.WeakSet()
         self.active_cmd = None
         self._progress = 0.0
         self.tracer_n = 1

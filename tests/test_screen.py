@@ -95,3 +95,44 @@ def test_screen_tracer_roundtrip():
     s.tracer(0)
     assert s.tracer() == 0
     assert arcadeturtle.tracer() == 0
+
+
+def test_screen_reset_resets_every_turtle():
+    """resetscreen استاندارد روی همه لاک‌پشت‌ها reset() می‌زند، نه فقط پاک‌کردن."""
+    a, b = Turtle(), Turtle()
+    a.speed(0)
+    b.speed(0)
+    a.pencolor("red")
+    a.forward(100)
+    b.left(90)
+    b.forward(50)
+    b.pensize(7)
+    eng = get_engine()
+    eng.tick(1 / 60)
+    assert eng.renderer.finished_lines  # چیزی کشیده شده
+
+    Screen().reset()
+    eng.tick(1 / 60)
+
+    for t in (a, b):
+        assert t.position() == pytest.approx((0, 0))
+        assert t.heading() == pytest.approx(0)
+        assert t.pencolor() == "black"
+        assert t.pensize() == 1
+        assert t.isdown()
+    assert eng.renderer.finished_lines == []
+
+
+def test_screen_clear_leaves_turtles_alone():
+    """در مقابل reset: clear فقط نقاشی‌ها را پاک می‌کند."""
+    t = Turtle()
+    t.speed(0)
+    t.forward(100)
+    eng = get_engine()
+    eng.tick(1 / 60)
+
+    Screen().clear()
+    eng.tick(1 / 60)
+
+    assert eng.renderer.finished_lines == []
+    assert t.position() == pytest.approx((100, 0)), "clear نباید لاک‌پشت را جابه‌جا کند"

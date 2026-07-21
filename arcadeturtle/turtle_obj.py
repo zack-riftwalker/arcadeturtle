@@ -17,6 +17,7 @@ class Turtle:
     def __init__(self, shape: str = "classic", visible: bool = True):
         eng = get_engine()
         self._id = eng.new_turtle()
+        eng.turtle_objects.add(self)  # تا Screen.reset() بتواند پیدایش کند
         self._pen_color_raw = "black"
         self._fill_color_raw = "black"
         if shape != "classic":
@@ -306,6 +307,18 @@ class Turtle:
     def write(self, arg, move=False, align="left", font=("Arial", 8, "normal")):
         """نوشتن متن در محل لاک‌پشت — فارسی خودکار shaping و RTL می‌شود."""
         import arcade
+
+        if move:
+            # برای جابه‌جایی قلم باید عرض متن اندازه‌گیری شود، که به یک شیء
+            # arcade.Text و در نتیجه به پنجره‌ی باز نیاز دارد؛ ولی write معمولاً
+            # قبل از done() صدا زده می‌شود که هنوز پنجره‌ای نیست. تخمین‌زدن عرض
+            # برای متن فارسیِ shape‌شده خطای زیادی دارد، پس صریح خطا می‌دهیم
+            # به‌جای این‌که بی‌صدا قلم را جابه‌جا نکنیم.
+            raise ArcadeTurtleError(
+                "write(move=True) هنوز در ArcadeTurtle پشتیبانی نمی‌شود.\n"
+                "برای نوشتن پشت‌سرهم، خودت قلم را جابه‌جا کن:\n"
+                "    penup(); write('سلام'); goto(x + 60, y); pendown()"
+            )
 
         text = str(arg)
         st, eng, tid = self._st, self._eng, self._id

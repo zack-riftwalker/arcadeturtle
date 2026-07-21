@@ -104,7 +104,14 @@ class _Screen:
     clearscreen = clear
 
     def reset(self):
-        self.clear()
+        """مثل resetscreen استاندارد: همه لاک‌پشت‌ها به حالت اولیه برمی‌گردند.
+
+        (Screen.clear() فقط نقاشی‌ها را پاک می‌کند و لاک‌پشت‌ها را دست نمی‌زند.)
+        """
+        eng = get_engine()
+        for t in list(eng.turtle_objects):  # کپی: reset ممکن است مجموعه را عوض کند
+            t.reset()
+        eng.renderer.clear_all()
 
     resetscreen = reset
 
