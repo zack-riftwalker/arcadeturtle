@@ -59,27 +59,43 @@ turtle.done()
 `hideturtle`/`ht`، `showturtle`/`st`، `isvisible` • کوئری: `position`/`pos`،
 `xcor`، `ycor`، `heading`، `towards`، `distance` • رویداد: `listen`، `onkey`،
 `onkeypress`، `onkeyrelease`، `onclick`/`onscreenclick`، `ontimer`، `tracer`،
-`update` • صفحه: `bgcolor`، `title`، `clear`، `reset`، `done`/`mainloop` •
-کلاس‌ها: `Turtle()` (چند نمونه مستقل)، `Screen()` (سینگلتون) با `setup`،
-`window_width`/`window_height`، `exitonclick`، `bye`.
+`update` • صفحه: `bgcolor`، `title`، `colormode`، `clear`، `reset`،
+`done`/`mainloop` • کلاس‌ها: `Turtle()` (چند نمونه مستقل)، `Screen()`
+(سینگلتون) با `setup`، `window_width`/`window_height`، `exitonclick`، `bye`.
+
+`clear`/`reset` دقیقاً مثل turtle اصلی تفکیک شده‌اند: `Turtle.clear()` فقط
+نقاشی‌های همان لاک‌پشت را پاک می‌کند، `Screen.clear()` همه‌چیز را، و
+`Screen.reset()` علاوه بر آن همه لاک‌پشت‌ها را به حالت اولیه برمی‌گرداند.
 
 ### 🟡 رفتار کمی متفاوت
 
 - **`speed`**: عدد بین ۰ تا ۱۰ (یا نام‌های `fastest`/`fast`/`normal`/`slow`/
   `slowest`)؛ سرعت واقعی پیکسل بر ثانیه با turtle اصلی یکی نیست، ولی معنای
   نسبی (بزرگ‌تر = سریع‌تر، ۰ = آنی) همان است.
-- **رنگ با اعداد اعشاری**: به‌جای فراخوانی `colormode(1.0)`، هر رنگی که سه عدد
-  بین ۰ و ۱ باشد خودکار به‌عنوان اعشاری شناسایی می‌شود.
+- **`colormode`**: مثل turtle اصلی کار می‌کند (پیش‌فرض ۲۵۵؛ برای رنگ‌های
+  اعشاری اول `colormode(1.0)` را صدا بزن) — ولی برخلاف turtle اصلی، حالت رنگ
+  سراسری است و به یک شیء Screen خاص گره نخورده.
 - **`shape`**: فقط شکل‌های آماده (`classic`, `arrow`, `turtle`, `circle`,
   `square`, `triangle`) — نه تصویر GIF مثل turtle اصلی.
 
 ### ❌ هنوز پشتیبانی نمی‌شود
 
 `setworldcoordinates`، `register_shape`/`addshape` (شکل سفارشی)، `bgpic`،
-`undo`/`setundobuffer`، `tiltangle`/`tilt`، `mode`، `colormode` به‌عنوان یک
-حالت سراسری، `textinput`/`numinput`، `getscreen()` چندپنجره‌ای (فقط یک پنجره
-در هر زمان). این‌ها همگی به‌صراحت خطای فارسی مهربان می‌دهند، نه رفتار خاموش
-یا نادرست.
+`undo`/`setundobuffer`، `tiltangle`/`tilt`، `mode`، `textinput`/`numinput`،
+`getscreen()` چندپنجره‌ای (فقط یک پنجره در هر زمان)، و `write(move=True)`.
+
+این‌ها همگی به‌صراحت خطای فارسی مهربان می‌دهند، نه رفتار خاموش یا نادرست.
+
+دلیل `write(move=True)`: برای جابه‌جا کردن قلم به انتهای متن باید عرض متن
+اندازه‌گیری شود که به پنجره‌ی باز نیاز دارد، ولی `write()` معمولاً قبل از
+`done()` صدا زده می‌شود. به‌جایش خودت قلم را جابه‌جا کن:
+
+```python
+penup()
+write("سلام")
+goto(xcor() + 60, ycor())
+pendown()
+```
 
 ## پشت صحنه چطور کار می‌کند؟
 

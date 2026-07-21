@@ -17,6 +17,11 @@ from ._coords import heading_to_arcade_angle, to_arcade
 Point = tuple[float, float]
 Color = tuple[int, int, int]
 
+# متن‌ها تا وقتی صاحبشان clear() نزند باقی می‌مانند. الگوی «write داخل حلقه
+# بدون clear» اشتباه رایج مبتدی است و نتیجه‌اش کندی تدریجی بدون هیچ پیامی؛
+# پس یک‌بار هشدار می‌دهیم. هیچ متنی حذف نمی‌شود — فقط تشخیص.
+TEXT_WARN_THRESHOLD = 1000
+
 # چندضلعی‌های کرسر، برگرفته از _shapes ماژول turtle استاندارد CPython.
 # آنجا «رو به شمال» تعریف شده‌اند؛ اینجا با تبدیل (x, y) -> (y, -x) رو به شرق
 # ذخیره شده‌اند تا دوران پادساعتگرد با خودِ heading جهت درست را بدهد.
@@ -106,6 +111,7 @@ class Renderer:
         self._dirty = True
         self._shape_list: ShapeElementList | None = None
         self._next_stamp_id = 1
+        self._text_warned = False
 
     # ---------- تغذیه بافر (مختصات Turtle) ----------
 
@@ -153,6 +159,17 @@ class Renderer:
 
     def add_text(self, turtle_id: int, text: "arcade.Text") -> None:
         self.texts.append(_TextItem(turtle_id, text))
+        if len(self.texts) > TEXT_WARN_THRESHOLD and not self._text_warned:
+            self._text_warned = True
+            import sys
+            print(
+                f"\n⚠️  بیش از {TEXT_WARN_THRESHOLD} متن روی صفحه جمع شده و "
+                "برنامه کم‌کم کند می‌شود. 📝\n"
+                "    اگر داخل حلقه write() می‌زنی، قبلش clear() را صدا بزن:\n"
+                "        نویسنده.clear()\n"
+                "        نویسنده.write(f\"امتیاز: {score}\")\n",
+                file=sys.stderr,
+            )
 
     def set_live_line(self, start: Point, end: Point, color: Color, width: float) -> None:
         self.live_line = _Line(-1, start, end, color, width)

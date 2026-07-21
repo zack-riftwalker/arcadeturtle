@@ -104,6 +104,22 @@ def test_persian_detection_and_shaping():
     assert shape_text("hello") == "hello"
 
 
+@pytest.mark.parametrize("raw, expected", [
+    ("امتیاز: 4", "4 :ﺯﺎﯿﺘﻣﺍ"),
+    ("امتیاز 12 از 20", "20 ﺯﺍ 12 ﺯﺎﯿﺘﻣﺍ"),
+    ("سلام Python", "Python ﻡﻼﺳ"),
+    ("باختی!", "!ﯽﺘﺧﺎﺑ"),
+    ("Score: 4", "Score: 4"),
+])
+def test_persian_shaping_locked_outputs(raw, expected):
+    """خروجی‌های تأییدشده قفل می‌شوند تا رگرسیون در _text_fa زود گرفته شود.
+
+    نکات مهم: ترتیب راست‌به‌چپ برعکس می‌شود ولی ارقام و کلمات انگلیسی
+    داخل جمله باید چپ‌به‌راست و به ترتیب درست بمانند.
+    """
+    assert shape_text(raw) == expected
+
+
 def test_clearstamps_matches_stdlib_slicing():
     """RawTurtle.clearstamps: None = همه، n >= 0 = n تای اول، n < 0 = n تای آخر.
 
@@ -168,6 +184,21 @@ def test_turtle_clear_only_removes_own_drawings():
     remaining = eng.renderer.finished_lines
     assert len(remaining) == 1
     assert remaining[0].turtle_id == b._id
+
+
+def test_text_accumulation_warns_once(capsys):
+    """write() داخل حلقه بدون clear() باید یک‌بار هشدار بدهد، نه هر بار،
+    و هیچ متنی هم نباید حذف شود."""
+    from arcadeturtle import _renderer
+
+    r = _renderer.Renderer()
+    n = _renderer.TEXT_WARN_THRESHOLD
+    for _ in range(n + 5):
+        r.add_text(0, object())  # شیء ساختگی؛ add_text فقط ذخیره می‌کند
+
+    err = capsys.readouterr().err
+    assert err.count("کند می‌شود") == 1, "هشدار باید دقیقاً یک‌بار چاپ شود"
+    assert len(r.texts) == n + 5, "هیچ متنی نباید حذف شده باشد"
 
 
 def test_hex_and_float_colors():
