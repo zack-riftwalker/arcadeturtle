@@ -63,10 +63,12 @@ turtle.done()
 `getshapes` • کوئری: `position`/`pos` (به‌صورت `Vec2D`)، `xcor`، `ycor`،
 `heading`، `towards`، `distance`، `teleport` • رویداد: `listen`، `onkey`،
 `onkeypress`، `onkeyrelease`، `onclick`/`onscreenclick`، `ontimer`، `tracer`،
-`update` • صفحه: `bgcolor`، `title`، `colormode`، `clear`، `reset`،
-`done`/`mainloop` • کلاس‌ها: `Turtle()`/`Pen()`/`RawTurtle()`/`RawPen()` (چند
-نمونه مستقل)، `Screen()` (سینگلتون) با `setup`، `window_width`/
-`window_height`، `exitonclick`، `bye`، `Vec2D`.
+`update`، `Turtle.onclick`/`ondrag`/`onrelease` (کلیک/کشیدن روی خودِ
+لاک‌پشت) • برگشت: `undo`، `setundobuffer`، `undobufferentries` (بافر
+جداگانه برای هر لاک‌پشت) • صفحه: `bgcolor`، `title`، `colormode`، `clear`،
+`reset`، `done`/`mainloop` • کلاس‌ها: `Turtle()`/`Pen()`/`RawTurtle()`/
+`RawPen()` (چند نمونه مستقل)، `Screen()` (سینگلتون) با `setup`،
+`window_width`/`window_height`، `exitonclick`، `bye`، `Vec2D`.
 
 `clear`/`reset` دقیقاً مثل turtle اصلی تفکیک شده‌اند: `Turtle.clear()` فقط
 نقاشی‌های همان لاک‌پشت را پاک می‌کند، `Screen.clear()` همه‌چیز را، و
@@ -91,12 +93,19 @@ turtle.done()
   فرقی احساس نمی‌شود.
 - **`resizemode("auto")`**: اندازه‌ی شکل برابر `pensize/5` محاسبه می‌شود —
   یک تقریب مستند، نه فرمول دقیق stdlib.
+- **`Turtle.onclick`/`ondrag`/`onrelease`**: تشخیص «روی لاک‌پشت» با یک دایره‌ی
+  احاطه‌کننده است، نه برخورد دقیق نقطه-در-چندضلعی — برای تعامل معمولی
+  (مثل کشیدن با موس) کافی است.
+- **`undo`**: بافر جداگانه برای هر لاک‌پشت (نه یک بافر مشترک سراسری)،
+  و به‌جای بازسازی دقیق مثل stdlib، هر رکورد آنی state قبلی را برمی‌گرداند.
+  همان دستورهایی که stdlib هم undo می‌کند پوشش داده شده: حرکت، چرخش، مهر،
+  نوشته، `dot`، `begin_fill`/`end_fill`، و ویژگی‌های قلم. تغییرات ظاهری مثل
+  `shape`/`tilt`/`resizemode` در stdlib هم قابل undo نیستند.
 
 ### ❌ هنوز پشتیبانی نمی‌شود
 
-`setworldcoordinates`، `bgpic`، `undo`/`setundobuffer`، `mode`،
-`textinput`/`numinput`، `getscreen()` چندپنجره‌ای (فقط یک پنجره در هر زمان)،
-و `write(move=True)`.
+`setworldcoordinates`، `bgpic`، `mode`، `textinput`/`numinput`،
+`getscreen()` چندپنجره‌ای (فقط یک پنجره در هر زمان)، و `write(move=True)`.
 
 این‌ها همگی به‌صراحت خطای فارسی مهربان می‌دهند، نه رفتار خاموش یا نادرست.
 

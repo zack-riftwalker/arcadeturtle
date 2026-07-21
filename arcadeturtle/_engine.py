@@ -121,6 +121,26 @@ class Engine:
             self._apply_instant(self.active_cmd)
             self.active_cmd = None
 
+    def flush_turtle(self, turtle_id: int) -> None:
+        """فرمان‌های در صف یا در حال انیمیشنِ این لاک‌پشت را آنی اعمال می‌کند
+        (بدون دست‌زدن به فرمان‌های بقیه لاک‌پشت‌ها). undo() قبل از برگرداندنِ
+        آخرین اقدام از این استفاده می‌کند تا مطمئن شود چیزی نیمه‌کاره نمانده —
+        وگرنه معلوم نیست چه چیزی را باید undo کرد: خطِ هنوز پخته‌نشده، یا
+        فرمانی که هنوز حتی از صف بیرون نیامده."""
+        if self.active_cmd is not None and self.active_cmd.turtle_id == turtle_id:
+            self.renderer.clear_live_line()
+            self._apply_instant(self.active_cmd)
+            self.active_cmd = None
+        remaining = deque()
+        for cmd in self.queue:
+            if cmd.turtle_id != turtle_id:
+                remaining.append(cmd)
+            elif isinstance(cmd, InstantCmd):
+                cmd.fn()
+            else:
+                self._apply_instant(cmd)
+        self.queue = remaining
+
     def tick(self, dt: float) -> None:
         remaining = dt
         while True:

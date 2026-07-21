@@ -60,6 +60,9 @@ def write(arg, move=False, align="left", font=("Arial", 8, "normal")):
 def shapesize(stretch_wid=None, stretch_len=None, outline=None):
     return _t().shapesize(stretch_wid, stretch_len, outline)
 turtlesize = shapesize
+def undo(): _t().undo()
+def setundobuffer(size): _t().setundobuffer(size)
+def undobufferentries(): return _t().undobufferentries()
 
 # ---------- کوئری ----------
 

@@ -165,6 +165,25 @@ class Renderer:
         self.texts = [t for t in self.texts if t.turtle_id != turtle_id]
         self._dirty = True
 
+    # ---------- undo: حذف آخرین آیتمِ یک لاک‌پشتِ خاص ----------
+
+    def _remove_last(self, items: list, turtle_id: int):
+        for i in range(len(items) - 1, -1, -1):
+            if items[i].turtle_id == turtle_id:
+                item = items.pop(i)
+                self._dirty = True
+                return item
+        return None
+
+    def remove_last_line_of(self, turtle_id: int):
+        return self._remove_last(self.finished_lines, turtle_id)
+
+    def remove_last_fill_of(self, turtle_id: int):
+        return self._remove_last(self.fills, turtle_id)
+
+    def remove_last_text_of(self, turtle_id: int):
+        return self._remove_last(self.texts, turtle_id)
+
     # ---------- رسم ----------
 
     def _to_a(self, p: Point) -> tuple[float, float]:

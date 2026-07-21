@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from dataclasses import dataclass, field
 
 from ._commands import InstantCmd, MoveCmd, RotateCmd
 from ._engine import get_engine
@@ -14,6 +15,59 @@ _RESIZE_MODES = ("auto", "user", "noresize")
 
 _SPEED_NAMES = {"fastest": 0, "fast": 10, "normal": 6, "slow": 3, "slowest": 1}
 
+DEFAULT_UNDO_BUFFER_SIZE = 1000  # مثل stdlib (_CFG["undobuffersize"])
+
+
+# ---------- رکوردهای undo ----------
+# هرکدام دقیقاً یک اقدام اولیه را برمی‌گردانند؛ undo() یکی از این‌ها را از
+# پشته‌ی همین لاک‌پشت پاپ می‌کند. قبل از پاپ، Engine.flush_turtle() صدا زده
+# می‌شود تا مطمئن شویم چیزی نیمه‌کاره (در صف یا در حال انیمیشن) نمانده.
+
+@dataclass
+class _UndoMove:
+    old_x: float
+    old_y: float
+    had_line: bool
+
+
+@dataclass
+class _UndoRotate:
+    old_heading: float
+
+
+@dataclass
+class _UndoStamp:
+    stamp_id: int
+
+
+@dataclass
+class _UndoText:
+    pass
+
+
+@dataclass
+class _UndoDot:
+    pass
+
+
+@dataclass
+class _UndoFillStart:
+    old_filling: bool
+    old_points: list = field(default_factory=list)
+
+
+@dataclass
+class _UndoFillEnd:
+    points: list
+
+
+@dataclass
+class _UndoPenAttr:
+    st_attr: str
+    old_value: object
+    raw_attr: str | None = None
+    old_raw: object = None
+
 
 class Turtle:
     def __init__(self, shape: str = "classic", visible: bool = True):
@@ -22,6 +76,8 @@ class Turtle:
         eng.turtle_objects.add(self)  # تا Screen.reset() بتواند پیدایش کند
         self._pen_color_raw = "black"
         self._fill_color_raw = "black"
+        self._undo_stack: list = []
+        self._undo_buffer_size = DEFAULT_UNDO_BUFFER_SIZE
         if shape != "classic":
             self.shape(shape)
         if not visible:
@@ -66,40 +122,55 @@ class Turtle:
         if st.filling:
             st.fill_points.append((st.x, st.y))
 
+    def _push_undo(self, record) -> None:
+        if self._undo_buffer_size <= 0:
+            return
+        self._undo_stack.append(record)
+        if len(self._undo_stack) > self._undo_buffer_size:
+            self._undo_stack.pop(0)
+
     # ---------- حرکت ----------
 
     def forward(self, distance):
         require_number(distance, "forward")
+        had_line = self._st.pen_down
         old, new = self._st.move_forward(distance)
         self._record_fill_point()
         self._submit_move(old, new)
+        self._push_undo(_UndoMove(old[0], old[1], had_line))
 
     def backward(self, distance):
         require_number(distance, "backward")
+        had_line = self._st.pen_down
         old, new = self._st.move_forward(-distance)
         self._record_fill_point()
         self._submit_move(old, new)
+        self._push_undo(_UndoMove(old[0], old[1], had_line))
 
     def left(self, angle):
         require_number(angle, "left", "90")
         start = self._st.heading
         self._st.rotate(angle)
         self._submit_rotate(start, angle)
+        self._push_undo(_UndoRotate(start))
 
     def right(self, angle):
         require_number(angle, "right", "90")
         start = self._st.heading
         self._st.rotate(-angle)
         self._submit_rotate(start, -angle)
+        self._push_undo(_UndoRotate(start))
 
     def goto(self, x, y=None):
         if y is None:  # goto((x, y)) هم مجاز است، مثل turtle اصلی
             x, y = x
         require_number(x, "goto")
         require_number(y, "goto")
+        had_line = self._st.pen_down
         old, new = self._st.goto(x, y)
         self._record_fill_point()
         self._submit_move(old, new)
+        self._push_undo(_UndoMove(old[0], old[1], had_line))
 
     def setx(self, x):
         require_number(x, "setx")
@@ -161,14 +232,17 @@ class Turtle:
         start = st.heading
         st.set_heading(to_angle)
         self._submit_rotate(start, delta)
+        self._push_undo(_UndoRotate(start))
 
     # ---------- قلم ----------
 
     def penup(self):
+        self._push_undo(_UndoPenAttr("pen_down", self._st.pen_down))
         self._st.pen_down = False
         self._submit_visual(pen_down=False)
 
     def pendown(self):
+        self._push_undo(_UndoPenAttr("pen_down", self._st.pen_down))
         self._st.pen_down = True
         self._submit_visual(pen_down=True)
 
@@ -180,6 +254,7 @@ class Turtle:
             return self._st.pen_size
         require_number(width, "pensize", "3")
         st = self._st
+        self._push_undo(_UndoPenAttr("pen_size", st.pen_size))
         st.pen_size = width
         changes = {"pen_size": width}
         if st.resize_mode == "auto":
@@ -194,6 +269,9 @@ class Turtle:
             return self._pen_color_raw
         raw = args[0] if len(args) == 1 else tuple(args)
         rgb = resolve_color(raw)
+        self._push_undo(_UndoPenAttr(
+            "pen_color", self._st.pen_color, "_pen_color_raw", self._pen_color_raw
+        ))
         self._pen_color_raw = raw
         self._st.pen_color = rgb
         self._submit_visual(pen_color=rgb)
@@ -286,6 +364,7 @@ class Turtle:
         ]
         eng, tid = self._eng, self._id
         eng.submit(InstantCmd(tid, lambda: eng.renderer.add_fill(tid, points, rgb)))
+        self._push_undo(_UndoDot())
 
     def stamp(self):
         st, eng, tid = self._st, self._eng, self._id
@@ -299,6 +378,7 @@ class Turtle:
         eng.submit(InstantCmd(tid, lambda: eng.renderer.add_stamp(
             sid, tid, shape, x, y, heading, stretch, fill, outline,
             shear, outline_width, matrix)))
+        self._push_undo(_UndoStamp(sid))
         return sid
 
     def clearstamp(self, stamp_id):
@@ -313,6 +393,7 @@ class Turtle:
 
     def begin_fill(self):
         st = self._st
+        self._push_undo(_UndoFillStart(st.filling, list(st.fill_points)))
         st.filling = True
         st.fill_points = [(st.x, st.y)]
 
@@ -326,6 +407,7 @@ class Turtle:
         rgb = st.fill_color
         eng, tid = self._eng, self._id
         eng.submit(InstantCmd(tid, lambda: eng.renderer.add_fill(tid, points, rgb)))
+        self._push_undo(_UndoFillEnd(points))
 
     def filling(self):
         return self._st.filling
@@ -335,6 +417,9 @@ class Turtle:
             return self._fill_color_raw
         raw = args[0] if len(args) == 1 else tuple(args)
         rgb = resolve_color(raw)
+        self._push_undo(_UndoPenAttr(
+            "fill_color", self._st.fill_color, "_fill_color_raw", self._fill_color_raw
+        ))
         self._fill_color_raw = raw
         self._st.fill_color = rgb
         self._submit_visual(fill_color=rgb)
@@ -391,6 +476,7 @@ class Turtle:
             eng.renderer.add_text(tid, t)
 
         eng.submit(InstantCmd(tid, make_text))
+        self._push_undo(_UndoText())
 
     # ---------- ظاهر ----------
 
@@ -554,6 +640,80 @@ class Turtle:
             v.fill_color = (0, 0, 0)
 
         eng.submit(InstantCmd(tid, snap))
+
+    # ---------- undo ----------
+
+    def setundobuffer(self, size):
+        """اندازه‌ی بافر undo را عوض می‌کند — دقیقاً مثل stdlib، یک بافر
+        تازه و خالی نصب می‌شود (تاریخچه‌ی قبلی نگه داشته نمی‌شود).
+        size=None یا ≤0 یعنی undo کاملاً خاموش شود."""
+        if size is None:
+            self._undo_buffer_size = 0
+        else:
+            require_number(size, "setundobuffer", "1000")
+            self._undo_buffer_size = max(int(size), 0)
+        self._undo_stack = []
+
+    def undobufferentries(self):
+        return len(self._undo_stack)
+
+    def undo(self):
+        """آخرین اقدامِ این لاک‌پشت را برمی‌گرداند — یک‌به‌یک، مثل Ctrl+Z."""
+        if not self._undo_stack:
+            return
+        eng, tid, st = self._eng, self._id, self._st
+        eng.flush_turtle(tid)  # مطمئن شو چیزی نیمه‌کاره (در صف/انیمیشن) نمانده
+        record = self._undo_stack.pop()
+
+        if isinstance(record, _UndoMove):
+            st.x, st.y = record.old_x, record.old_y
+            if record.had_line:
+                eng.renderer.remove_last_line_of(tid)
+            x, y = record.old_x, record.old_y
+
+            def snap_move():
+                v = eng.turtles[tid].visual
+                v.x, v.y = x, y
+
+            eng.submit(InstantCmd(tid, snap_move))
+
+        elif isinstance(record, _UndoRotate):
+            st.heading = record.old_heading
+            heading = record.old_heading
+
+            def snap_rotate():
+                eng.turtles[tid].visual.heading = heading
+
+            eng.submit(InstantCmd(tid, snap_rotate))
+
+        elif isinstance(record, _UndoStamp):
+            eng.submit(InstantCmd(tid, lambda: eng.renderer.clear_stamp(record.stamp_id)))
+
+        elif isinstance(record, _UndoText):
+            eng.submit(InstantCmd(tid, lambda: eng.renderer.remove_last_text_of(tid)))
+
+        elif isinstance(record, _UndoDot):
+            eng.submit(InstantCmd(tid, lambda: eng.renderer.remove_last_fill_of(tid)))
+
+        elif isinstance(record, _UndoFillStart):
+            st.filling = record.old_filling
+            st.fill_points = list(record.old_points)
+
+        elif isinstance(record, _UndoFillEnd):
+            eng.submit(InstantCmd(tid, lambda: eng.renderer.remove_last_fill_of(tid)))
+            st.filling = True
+            st.fill_points = list(record.points)
+
+        elif isinstance(record, _UndoPenAttr):
+            setattr(st, record.st_attr, record.old_value)
+            if record.raw_attr:
+                setattr(self, record.raw_attr, record.old_raw)
+            st_attr, old_value = record.st_attr, record.old_value
+
+            def snap_pen():
+                setattr(eng.turtles[tid].visual, st_attr, old_value)
+
+            eng.submit(InstantCmd(tid, snap_pen))
 
     # نام‌های کوتاه (aliases) مثل turtle اصلی
     turtlesize = shapesize
