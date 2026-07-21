@@ -126,6 +126,12 @@ class Renderer:
     def add_text(self, text: arcade.Text) -> None:
         self.texts.append(text)
 
+    def set_live_line(self, start: Point, end: Point, color: Color, width: float) -> None:
+        self.live_line = _Line(start, end, color, width)
+
+    def clear_live_line(self) -> None:
+        self.live_line = None
+
     def clear_all(self) -> None:
         self.finished_lines.clear()
         self.fills.clear()
