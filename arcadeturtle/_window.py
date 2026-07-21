@@ -40,3 +40,9 @@ class ArcadeTurtleWindow(arcade.Window):
 
     def on_mouse_press(self, x, y, button, modifiers):
         self.engine.events.handle_click(x, y, button)
+
+    def on_mouse_release(self, x, y, button, modifiers):
+        self.engine.events.handle_mouse_release(x, y, button)
+
+    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        self.engine.events.handle_mouse_drag(x, y, buttons)

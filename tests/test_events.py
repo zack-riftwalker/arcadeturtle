@@ -113,3 +113,96 @@ def test_tracer_zero_finishes_active_command():
     arcadeturtle.tracer(0)
     assert eng.active_cmd is None
     assert eng.turtles[0].visual.x == pytest.approx(1000)
+
+
+def test_tracer_n_only_animates_every_nth_move():
+    """tracer(n): فقط هر n اُمین حرکت واقعاً پخش/انیمیشن می‌شود؛ بقیه آنی."""
+    t = arcadeturtle.Turtle()
+    t.speed(1)  # 250 px/s — کند کافی برای مشاهده‌ی وسط انیمیشن
+    arcadeturtle.tracer(3)
+    for _ in range(3):
+        t.forward(1000)
+    eng = get_engine()
+
+    eng.tick(1 / 60)
+    assert t.position() == pytest.approx((3000, 0)), "موقعیت منطقی هیچ‌وقت نمی‌پرد"
+    assert eng.active_cmd is not None, "دو حرکت اول آنی شدند، سومی الان در حال انیمیشن است"
+    v_after_first_tick = eng.turtles[t._id].visual.x
+    assert 2000 < v_after_first_tick < 3000, "بصری باید بین شروع و پایانِ حرکتِ سوم باشد"
+
+    eng.tick(1 / 60)
+    v_after_second_tick = eng.turtles[t._id].visual.x
+    assert v_after_second_tick > v_after_first_tick, "انیمیشن باید جلوتر رفته باشد"
+
+
+def test_tracer_one_is_default_and_animates_every_move():
+    t = arcadeturtle.Turtle()
+    t.speed(1)
+    assert arcadeturtle.tracer() == 1
+    t.forward(1000)
+    eng = get_engine()
+    eng.tick(1 / 60)
+    assert eng.active_cmd is not None, "با tracer(1) همان حرکت اول هم باید انیمیشن شود"
+
+
+# ---------- 10.5: کلیک/کشیدن/رهاکردن روی خودِ لاک‌پشت ----------
+
+def test_turtle_onclick_fires_only_when_click_lands_on_it():
+    eng = get_engine()
+    eng.renderer.set_size(800, 600)
+    t = arcadeturtle.Turtle()
+    t.speed(0)
+    t.penup()
+    t.goto(0, 0)
+    hits = []
+    t.onclick(lambda x, y: hits.append((x, y)))
+
+    eng.events.handle_click(400, 300, 1)  # مرکز پنجره = (0,0) لاک‌پشت
+    assert hits == [(0, 0)]
+
+    eng.events.handle_click(10, 10, 1)  # خیلی دور
+    assert hits == [(0, 0)], "کلیک دور از لاک‌پشت نباید چیزی اضافه کند"
+
+
+def test_turtle_ondrag_and_onrelease_full_sequence():
+    eng = get_engine()
+    eng.renderer.set_size(800, 600)
+    t = arcadeturtle.Turtle()
+    t.speed(0)
+    t.penup()
+    t.goto(0, 0)
+    drags, releases = [], []
+    t.ondrag(lambda x, y: drags.append((x, y)))
+    t.onrelease(lambda x, y: releases.append((x, y)))
+
+    eng.events.handle_click(400, 300, 1)   # فشردن روی لاک‌پشت -> شروع کشیدن
+    eng.events.handle_mouse_drag(420, 320, 1)
+    eng.events.handle_mouse_drag(450, 350, 1)
+    eng.events.handle_mouse_release(450, 350, 1)
+
+    assert drags == [(20, 20), (50, 50)]
+    assert releases == [(50, 50)]
+
+
+def test_ondrag_does_nothing_without_prior_press_on_turtle():
+    eng = get_engine()
+    eng.renderer.set_size(800, 600)
+    t = arcadeturtle.Turtle()
+    drags = []
+    t.ondrag(lambda x, y: drags.append((x, y)))
+    eng.events.handle_mouse_drag(100, 100, 1)
+    assert drags == []
+
+
+def test_module_level_onclick_targets_default_turtle_not_whole_screen():
+    """در stdlib هم همین‌طور است: turtle.onclick سطح ماژول یعنی کلیک روی
+    خودِ لاک‌پشتِ پیش‌فرض؛ برای کل صفحه باید onscreenclick صدا زد."""
+    eng = get_engine()
+    eng.renderer.set_size(800, 600)
+    arcadeturtle.forward(0)  # فقط برای ساختن لاک‌پشت پیش‌فرض در (0,0)
+    hits = []
+    arcadeturtle.onclick(lambda x, y: hits.append((x, y)))
+    eng.events.handle_click(700, 550, 1)  # دور از لاک‌پشت پیش‌فرض
+    assert hits == [], "onclick سطح ماژول نباید مثل onscreenclick با هر کلیکی فعال شود"
+    eng.events.handle_click(400, 300, 1)  # روی لاک‌پشت پیش‌فرض
+    assert hits == [(0, 0)]

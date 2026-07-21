@@ -442,6 +442,19 @@ class Turtle:
     def isvisible(self):
         return self._st.visible
 
+    # ---------- رویدادهای موس روی خودِ لاک‌پشت ----------
+    # (متفاوت با Screen.onclick: آن‌جا کل صفحه، این‌جا فقط وقتی کلیک/کشیدن
+    # روی کرسر خودِ این لاک‌پشت باشد — با یک دایره‌ی احاطه‌کننده تشخیص داده می‌شود)
+
+    def onclick(self, fun, btn=1, add=None):
+        self._eng.events.bind_turtle_click(self._id, fun, btn)
+
+    def ondrag(self, fun, btn=1, add=None):
+        self._eng.events.bind_turtle_drag(self._id, fun, btn)
+
+    def onrelease(self, fun, btn=1, add=None):
+        self._eng.events.bind_turtle_release(self._id, fun, btn)
+
     def resizemode(self, rmode=None):
         st = self._st
         if rmode is None:

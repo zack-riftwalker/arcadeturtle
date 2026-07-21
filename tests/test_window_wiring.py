@@ -24,6 +24,12 @@ class FakeEvents:
     def handle_click(self, x, y, button):
         self.calls.append(("click", x, y, button))
 
+    def handle_mouse_release(self, x, y, button):
+        self.calls.append(("release", x, y, button))
+
+    def handle_mouse_drag(self, x, y, buttons):
+        self.calls.append(("drag", x, y, buttons))
+
 
 class FakeRenderer:
     def __init__(self):
@@ -82,3 +88,15 @@ def test_on_draw_clears_then_draws_visible_states(win):
     win.on_draw()
     assert cleared == [True], "صفحه باید قبل از رسم پاک شود"
     assert win.engine.renderer.drawn == [["s1", "s2"]]
+
+
+def test_mouse_release_reaches_engine(win):
+    win.on_mouse_release(120, 340, 1, 0)
+    assert win.engine.events.calls == [("release", 120, 340, 1)]
+
+
+def test_mouse_drag_passes_button_bitmask_not_raw_button(win):
+    """on_mouse_drag در arcade/pyglet یک bitmask از دکمه‌های پایین می‌دهد،
+    نه یک دکمه‌ی تکی — پنجره نباید این تفاوت را پنهان کند."""
+    win.on_mouse_drag(120, 340, 5, 5, 0b101, 0)
+    assert win.engine.events.calls == [("drag", 120, 340, 0b101)]

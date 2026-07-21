@@ -109,10 +109,16 @@ def onkeyrelease(fun, key):
 
 
 def onclick(fun, btn=1, add=None):
+    """کلیک روی خودِ لاک‌پشتِ پیش‌فرض — نه کل صفحه (آن onscreenclick است)."""
+    _t().onclick(fun, btn, add)
+
+
+def onscreenclick(fun, btn=1, add=None):
     get_engine().events.bind_click(fun, btn)
 
 
-onscreenclick = onclick
+def ondrag(fun, btn=1, add=None): _t().ondrag(fun, btn, add)
+def onrelease(fun, btn=1, add=None): _t().onrelease(fun, btn, add)
 
 
 def ontimer(fun, t=0):

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import traceback
 from typing import Callable
 
@@ -71,6 +72,11 @@ class EventRegistry:
         self.key_press: dict[int | None, Callable] = {}
         self.key_release: dict[int, Callable] = {}
         self.click: dict[int, Callable] = {}
+        # کلیک/کشیدن/رهاکردن روی خودِ لاک‌پشت (نه کل صفحه) — کلید (turtle_id, button)
+        self.turtle_click: dict[tuple[int, int], Callable] = {}
+        self.turtle_drag: dict[tuple[int, int], Callable] = {}
+        self.turtle_release: dict[tuple[int, int], Callable] = {}
+        self._dragging: tuple[int, int] | None = None
 
     # ---------- ثبت ----------
 
@@ -95,6 +101,27 @@ class EventRegistry:
         else:
             self.click[b] = fn
 
+    def bind_turtle_click(self, turtle_id: int, fn: Callable | None, btn: int = 1) -> None:
+        b = _BUTTON_MAP.get(btn, btn)
+        if fn is None:
+            self.turtle_click.pop((turtle_id, b), None)
+        else:
+            self.turtle_click[(turtle_id, b)] = fn
+
+    def bind_turtle_drag(self, turtle_id: int, fn: Callable | None, btn: int = 1) -> None:
+        b = _BUTTON_MAP.get(btn, btn)
+        if fn is None:
+            self.turtle_drag.pop((turtle_id, b), None)
+        else:
+            self.turtle_drag[(turtle_id, b)] = fn
+
+    def bind_turtle_release(self, turtle_id: int, fn: Callable | None, btn: int = 1) -> None:
+        b = _BUTTON_MAP.get(btn, btn)
+        if fn is None:
+            self.turtle_release.pop((turtle_id, b), None)
+        else:
+            self.turtle_release[(turtle_id, b)] = fn
+
     def schedule_timer(self, fn: Callable, t_ms: float = 0) -> None:
         import arcade
 
@@ -118,8 +145,63 @@ class EventRegistry:
     def handle_click(self, x: float, y: float, button: int) -> None:
         fn = self.click.get(button)
         if fn is not None:
-            from ._coords import to_turtle
-
-            r = self.engine.renderer
-            tx, ty = to_turtle(x, y, r.width, r.height)
+            tx, ty = self._to_turtle(x, y)
             _safe_call(fn, tx, ty)
+        self._handle_turtle_press(x, y, button)
+
+    def handle_mouse_release(self, x: float, y: float, button: int) -> None:
+        if self._dragging is not None and self._dragging[1] == button:
+            tid, _ = self._dragging
+            fn = self.turtle_release.get((tid, button))
+            if fn is not None:
+                tx, ty = self._to_turtle(x, y)
+                _safe_call(fn, tx, ty)
+        self._dragging = None
+
+    def handle_mouse_drag(self, x: float, y: float, buttons: int) -> None:
+        if self._dragging is None:
+            return
+        tid, button = self._dragging
+        if not (buttons & button):  # دکمه‌ی اصلی دیگر پایین نیست
+            self._dragging = None
+            return
+        fn = self.turtle_drag.get((tid, button))
+        if fn is not None:
+            tx, ty = self._to_turtle(x, y)
+            _safe_call(fn, tx, ty)
+
+    # ---------- کمکی ----------
+
+    def _to_turtle(self, x: float, y: float) -> tuple[float, float]:
+        from ._coords import to_turtle
+
+        r = self.engine.renderer
+        return to_turtle(x, y, r.width, r.height)
+
+    def _handle_turtle_press(self, x: float, y: float, button: int) -> None:
+        tx, ty = self._to_turtle(x, y)
+        tid = self._hit_test(tx, ty)
+        if tid is None:
+            return
+        key = (tid, button)
+        click_fn = self.turtle_click.get(key)
+        if click_fn is not None:
+            _safe_call(click_fn, tx, ty)
+        if key in self.turtle_drag:
+            self._dragging = key
+
+    def _hit_test(self, tx: float, ty: float) -> int | None:
+        """آخرین لاک‌پشتی که کلیک رویش افتاده (دایره‌ی احاطه‌کننده — نه دقیق)."""
+        shapes = self.engine.renderer.shapes
+        best = None
+        for tid, rt in self.engine.turtles.items():
+            v = rt.visual
+            if not v.visible:
+                continue
+            try:
+                radius = shapes.bounding_radius(v.shape, v.shape_size)
+            except Exception:
+                continue
+            if math.hypot(tx - v.x, ty - v.y) <= radius:
+                best = tid
+        return best

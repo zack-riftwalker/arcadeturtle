@@ -129,6 +129,26 @@ class ShapeRegistry:
     def get_texture(self, name: str):
         return self._textures.get(name)
 
+    def bounding_radius(self, name: str, stretch: tuple[float, float]) -> float:
+        """شعاع تقریبی کرسر — برای hit-test کلیک/کشیدن (Turtle.onclick/ondrag).
+
+        ساده‌سازی: به‌جای برخورد دقیق نقطه-در-چندضلعی، یک دایره‌ی احاطه‌کننده
+        استفاده می‌شود. برای اسکریپت‌های آموزشی که با کلیک روی لاک‌پشت تعامل
+        می‌کنند (مثل Etch-A-Sketch) این دقت کافی است.
+        """
+        shape = self.get(name)
+        scale = max(stretch)
+        if shape.type == "image":
+            texture = self._textures.get(name)
+            if texture is None:
+                return 10.0 * scale
+            return math.hypot(texture.width, texture.height) / 2
+        points = (shape.data[0] if shape.type == "polygon" else
+                  [pt for poly, _, _ in shape.data for pt in poly])
+        if not points:
+            return 10.0 * scale
+        return max(math.hypot(x, y) for x, y in points) * scale
+
     def register(self, name, shape=None) -> None:
         """معادل register_shape/addshape استاندارد:
 

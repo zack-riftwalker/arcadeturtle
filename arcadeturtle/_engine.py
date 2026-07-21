@@ -52,6 +52,7 @@ class Engine:
         self.active_cmd = None
         self._progress = 0.0
         self.tracer_n = 1
+        self._tracer_counter = 0
         self.renderer = Renderer()
         self.events = EventRegistry(self)
         self.window = None
@@ -133,6 +134,15 @@ class Engine:
                 if self.tracer_n == 0 or cmd.speed == 0:
                     self._apply_instant(cmd)
                     continue
+                if self.tracer_n > 1:
+                    # مثل tracer(n) در turtle اصلی: فقط هر n اُمین حرکت
+                    # واقعاً پخش/انیمیشن می‌شود؛ بقیه آنی اعمال می‌شوند تا
+                    # صحنه سریع‌تر جلو برود (ولی موقعیت منطقی هرگز نمی‌پرد،
+                    # چون آن از قبل هم‌زمان با فراخوانی API به‌روز شده بود).
+                    self._tracer_counter += 1
+                    if self._tracer_counter % self.tracer_n != 0:
+                        self._apply_instant(cmd)
+                        continue
                 self.active_cmd = cmd
                 self._progress = 0.0
             if remaining <= 0:
