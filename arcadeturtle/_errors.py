@@ -40,6 +40,30 @@ COLOR_NAMES: dict[str, tuple[int, int, int]] = {
 }
 
 
+# حالت رنگ، دقیقاً مثل turtle استاندارد: پیش‌فرض ۲۵۵.
+# قبلاً به‌جای این، حدس زده می‌شد که «اگر هر سه عدد بین ۰ و ۱ بودند یعنی اعشاری»،
+# ولی آن حدس (1, 1, 1) را سفید می‌کرد در حالی که turtle اصلی آن را تقریباً سیاه
+# می‌بیند — تله‌ای برای هنرجویی که آموزش ۰-۲۵۵ را دنبال می‌کند.
+_colormode: float = 255
+
+
+def get_colormode() -> float:
+    return _colormode
+
+
+def set_colormode(cmode) -> None:
+    global _colormode
+    if cmode in (1, 1.0):
+        _colormode = 1.0
+    elif cmode == 255:
+        _colormode = 255
+    else:
+        raise ArcadeTurtleError(
+            f"colormode فقط 1.0 یا 255 می‌تواند باشد، نه {cmode!r}\n"
+            "colormode(255) یعنی رنگ‌ها 0 تا 255، colormode(1.0) یعنی 0 تا 1"
+        )
+
+
 def resolve_color(value) -> tuple[int, int, int]:
     """نام رنگ / '#rrggbb' / تاپل (r,g,b) را به تاپل ۰-۲۵۵ تبدیل می‌کند."""
     if isinstance(value, str):
@@ -63,13 +87,20 @@ def resolve_color(value) -> tuple[int, int, int]:
             raise ArcadeTurtleError(
                 f"رنگ {value!r} معتبر نیست؛ سه عدد لازم است، مثل (255, 0, 0)"
             ) from None
-        if all(0 <= c <= 1 for c in nums):
-            # حالت colormode(1.0) خود turtle
-            return tuple(round(c * 255) for c in nums)
-        if all(0 <= c <= 255 for c in nums):
+        top = _colormode
+        if all(0 <= c <= top for c in nums):
+            if top == 1.0:
+                return tuple(round(c * 255) for c in nums)
             return tuple(round(c) for c in nums)
+        if top == 1.0:
+            raise ArcadeTurtleError(
+                f"اعداد رنگ {value!r} باید بین 0 تا 1 باشند، "
+                "چون colormode(1.0) فعال است.\n"
+                "برای رنگ‌های 0 تا 255 اول colormode(255) را صدا بزن."
+            )
         raise ArcadeTurtleError(
-            f"اعداد رنگ {value!r} باید بین 0 تا 255 باشند (یا بین 0 تا 1)"
+            f"اعداد رنگ {value!r} باید بین 0 تا 255 باشند.\n"
+            "برای رنگ‌های اعشاری (0 تا 1) اول colormode(1.0) را صدا بزن."
         )
     raise ArcadeTurtleError(
         f"رنگ {value!r} معتبر نیست.\n"

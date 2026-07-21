@@ -173,5 +173,6 @@ def test_turtle_clear_only_removes_own_drawings():
 def test_hex_and_float_colors():
     arcadeturtle.pencolor("#ff8000")
     assert get_engine().turtles[0].logical.pen_color == (255, 128, 0)
-    arcadeturtle.pencolor((1.0, 0.0, 0.5))  # حالت colormode(1.0)
+    arcadeturtle.colormode(1.0)  # حالا لازم است، مثل turtle استاندارد
+    arcadeturtle.pencolor((1.0, 0.0, 0.5))
     assert get_engine().turtles[0].logical.pen_color == (255, 0, 128)

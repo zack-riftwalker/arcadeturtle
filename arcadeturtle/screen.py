@@ -3,7 +3,13 @@
 from __future__ import annotations
 
 from ._engine import get_engine
-from ._errors import ArcadeTurtleError, require_number, resolve_color
+from ._errors import (
+    ArcadeTurtleError,
+    get_colormode,
+    require_number,
+    resolve_color,
+    set_colormode,
+)
 
 _instance = None
 
@@ -45,9 +51,9 @@ class _Screen:
         return (self.window_width(), self.window_height())
 
     def colormode(self, cmode=None):
-        # resolve_color خودش هر دو حالت 1.0 و 255 را می‌فهمد؛ برای سازگاری فقط می‌پذیرد
         if cmode is None:
-            return 255
+            return get_colormode()
+        set_colormode(cmode)
 
     # ---------- اجرا ----------
 

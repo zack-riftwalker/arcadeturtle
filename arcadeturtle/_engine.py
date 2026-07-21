@@ -242,8 +242,10 @@ def get_engine() -> Engine:
 def reset_engine() -> None:
     """فقط برای تست‌ها — موتور فعلی را «مصرف‌شده» علامت می‌زند تا هشدار
     فراموشیِ done() برای اسکریپت‌های آزمایشی که عمداً done() صدا نمی‌زنند
-    نمایش داده نشود."""
+    نمایش داده نشود. حالت رنگ هم به پیش‌فرض برمی‌گردد تا تست‌ها به هم نشت نکنند."""
     global _engine
     if _engine is not None:
         _engine._ran = True
     _engine = None
+    from ._errors import set_colormode
+    set_colormode(255)

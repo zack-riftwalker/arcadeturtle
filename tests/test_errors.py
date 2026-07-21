@@ -37,6 +37,36 @@ def test_resolve_color_bad_tuple_range():
         resolve_color((300, 0, 0))
 
 
+def test_default_colormode_is_255_like_stdlib():
+    """(1,1,1) باید تقریباً سیاه باشد، نه سفید — این همان تله‌ای بود که
+    heuristic قدیمی («هر سه بین ۰ و ۱ یعنی اعشاری») ایجاد می‌کرد."""
+    from arcadeturtle import Screen
+
+    assert Screen().colormode() == 255
+    assert resolve_color((1, 1, 1)) == (1, 1, 1)
+    assert resolve_color((255, 255, 255)) == (255, 255, 255)
+
+
+def test_colormode_one_scales_floats():
+    from arcadeturtle import Screen
+
+    Screen().colormode(1.0)
+    assert Screen().colormode() == 1.0
+    assert resolve_color((1, 1, 1)) == (255, 255, 255)
+    assert resolve_color((0.5, 0.5, 0.5)) == (128, 128, 128)
+    with pytest.raises(ArcadeTurtleError) as e:
+        resolve_color((255, 0, 0))  # خارج از بازه ۰..۱
+    assert "colormode(1.0)" in str(e.value)
+
+
+def test_colormode_rejects_other_values():
+    from arcadeturtle import Screen
+
+    with pytest.raises(ArcadeTurtleError) as e:
+        Screen().colormode(7)
+    assert "1.0" in str(e.value) and "255" in str(e.value)
+
+
 def test_unknown_shape_friendly_error():
     with pytest.raises(ArcadeTurtleError) as e:
         arcadeturtle.shape("hexagon")

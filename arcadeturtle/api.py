@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 from ._engine import get_engine
-from ._errors import resolve_color
+from ._errors import get_colormode, resolve_color, set_colormode
 from .turtle_obj import Turtle
 
 _default_turtle: Turtle | None = None
@@ -126,6 +126,12 @@ def bgcolor(*args):
 
 def title(text):
     get_engine().set_title(str(text))
+
+
+def colormode(cmode=None):
+    if cmode is None:
+        return get_colormode()
+    set_colormode(cmode)
 
 
 def clear(): _t().clear()
