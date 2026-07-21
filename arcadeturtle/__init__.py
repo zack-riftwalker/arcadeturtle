@@ -6,11 +6,12 @@ from .api import (  # صریح، برای ابزارهای تحلیل کد
     addshape, backward, begin_fill, bgcolor, bgpic, bk, back, bye, circle,
     clear, clearscreen, clearstamp, clearstamps, color, colormode, delay,
     distance, done, dot, down, end_fill, exitonclick, fd, fillcolor,
-    filling, forward, getcanvas, goto, heading, hideturtle, home, ht,
-    isdown, isvisible, left, lt, mainloop, mode, pencolor, pendown,
-    pensize, penup, pd, pos, position, pu, register_shape, reset,
-    resetscreen, right, rt, screensize, seth, setheading, setpos,
-    setposition, setup, setworldcoordinates, setx, sety, teleport, listen,
+    filling, forward, getcanvas, get_shapepoly, getshapes, goto, heading,
+    hideturtle, home, ht, isdown, isvisible, left, lt, mainloop, mode,
+    pencolor, pendown, pensize, penup, pd, pos, position, pu, register_shape,
+    reset, resetscreen, resizemode, right, rt, screensize, seth, setheading,
+    setpos, setposition, settiltangle, setup, setworldcoordinates, setx,
+    sety, shapetransform, shearfactor, teleport, tilt, tiltangle, listen,
     onclick, onkey, onkeypress, onkeyrelease, onscreenclick, ontimer, shape,
     shapesize, showturtle, speed, st, stamp, title, towards, tracer,
     turtles, turtlesize, up, update, width, window_height, window_width,
@@ -18,6 +19,7 @@ from .api import (  # صریح، برای ابزارهای تحلیل کد
 )
 from .screen import Screen, ScrolledCanvas, TurtleScreen
 from .turtle_obj import Pen, RawPen, RawTurtle, Turtle
+from ._shapes import Shape
 from ._vec2d import Vec2D
 
 

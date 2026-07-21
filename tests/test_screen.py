@@ -48,7 +48,7 @@ def test_screen_events_bind_same_registry():
 
 def test_unsupported_features_raise_clean_error():
     s = Screen()
-    for call in (s.setworldcoordinates, s.bgpic, s.register_shape):
+    for call in (s.setworldcoordinates, s.bgpic):
         with pytest.raises(ArcadeTurtleError) as e:
             call()
         assert "پشتیبانی نمی‌شود" in str(e.value)

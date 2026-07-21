@@ -73,9 +73,22 @@ def distance(x, y=None): return _t().distance(x, y)
 # ---------- ظاهر ----------
 
 def shape(name=None): return _t().shape(name)
+def get_shapepoly(): return _t().get_shapepoly()
 def hideturtle(): _t().hideturtle()
 def showturtle(): _t().showturtle()
 def isvisible(): return _t().isvisible()
+def resizemode(rmode=None): return _t().resizemode(rmode)
+def tilt(angle): _t().tilt(angle)
+def tiltangle(angle=None): return _t().tiltangle(angle)
+def settiltangle(angle): _t().settiltangle(angle)
+def shearfactor(shear=None): return _t().shearfactor(shear)
+
+
+def shapetransform(t11=None, t12=None, t21=None, t22=None):
+    return _t().shapetransform(t11, t12, t21, t22)
+
+
+def getshapes(): return _screen().getshapes()
 
 # ---------- رویدادها ----------
 

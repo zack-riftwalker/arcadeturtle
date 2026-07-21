@@ -21,6 +21,11 @@ class TurtleState:
     shape_size: tuple[float, float] = (1.0, 1.0)
     filling: bool = False
     fill_points: list[tuple[float, float]] = field(default_factory=list)
+    tilt_angle: float = 0.0     # چرخش ظاهری کرسر، مستقل از جهت حرکت
+    shear_factor: float = 0.0
+    outline_width: float = 1.0
+    shape_transform: tuple[float, float, float, float] | None = None  # override خام
+    resize_mode: str = "noresize"  # فقط منطقی — روی shape_size وقتی pensize عوض می‌شود اثر می‌گذارد
 
     def move_forward(self, dist: float) -> tuple[tuple[float, float], tuple[float, float]]:
         """حرکت به جلو در جهت heading. برمی‌گرداند (نقطه قبل، نقطه بعد)."""
@@ -53,6 +58,7 @@ class TurtleState:
         c = TurtleState(**{k: getattr(self, k) for k in (
             "x", "y", "heading", "pen_down", "pen_color", "pen_size",
             "fill_color", "speed", "visible", "shape", "shape_size", "filling",
+            "tilt_angle", "shear_factor", "outline_width", "shape_transform",
         )})
         c.fill_points = list(self.fill_points)
         return c

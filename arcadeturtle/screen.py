@@ -163,13 +163,13 @@ class _Screen:
     def bgpic(self, *args, **kwargs):
         raise ArcadeTurtleError("bgpic هنوز در ArcadeTurtle پشتیبانی نمی‌شود.")
 
-    def register_shape(self, *args, **kwargs):
-        raise ArcadeTurtleError(
-            "register_shape هنوز در ArcadeTurtle پشتیبانی نمی‌شود.\n"
-            "از شکل‌های آماده استفاده کن: classic, turtle, square, circle, triangle, arrow"
-        )
+    def register_shape(self, name, shape=None):
+        get_engine().renderer.shapes.register(name, shape)
 
     addshape = register_shape
+
+    def getshapes(self):
+        return get_engine().renderer.shapes.names()
 
 
 def Screen() -> _Screen:

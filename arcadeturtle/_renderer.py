@@ -6,13 +6,14 @@
 
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass
 
 import arcade
 from arcade.shape_list import ShapeElementList, create_line, create_polygon
+from arcade.types.rect import XYWH
 
 from ._coords import heading_to_arcade_angle, to_arcade
+from ._shapes import BUILTIN_POLYGONS, ShapeRegistry, transform_polygon
 
 Point = tuple[float, float]
 Color = tuple[int, int, int]
@@ -22,32 +23,9 @@ Color = tuple[int, int, int]
 # پس یک‌بار هشدار می‌دهیم. هیچ متنی حذف نمی‌شود — فقط تشخیص.
 TEXT_WARN_THRESHOLD = 1000
 
-# چندضلعی‌های کرسر، برگرفته از _shapes ماژول turtle استاندارد CPython.
-# آنجا «رو به شمال» تعریف شده‌اند؛ اینجا با تبدیل (x, y) -> (y, -x) رو به شرق
-# ذخیره شده‌اند تا دوران پادساعتگرد با خودِ heading جهت درست را بدهد.
-def _east(points: tuple[tuple[float, float], ...]) -> tuple[tuple[float, float], ...]:
-    return tuple((y, -x) for x, y in points)
-
-
-SHAPE_POLYGONS: dict[str, tuple[tuple[float, float], ...]] = {
-    "arrow": _east(((-10, 0), (10, 0), (0, 10))),
-    "turtle": _east((
-        (0, 16), (-2, 14), (-1, 10), (-4, 7), (-7, 9), (-9, 8), (-6, 5),
-        (-7, 1), (-5, -3), (-8, -6), (-6, -8), (-4, -5), (0, -7), (4, -5),
-        (6, -8), (8, -6), (5, -3), (7, 1), (6, 5), (9, 8), (7, 9), (4, 7),
-        (1, 10), (2, 14),
-    )),
-    "circle": _east((
-        (10, 0), (9.51, 3.09), (8.09, 5.88), (5.88, 8.09), (3.09, 9.51),
-        (0, 10), (-3.09, 9.51), (-5.88, 8.09), (-8.09, 5.88), (-9.51, 3.09),
-        (-10, 0), (-9.51, -3.09), (-8.09, -5.88), (-5.88, -8.09),
-        (-3.09, -9.51), (0.0, -10.0), (3.09, -9.51), (5.88, -8.09),
-        (8.09, -5.88), (9.51, -3.09),
-    )),
-    "square": _east(((10, -10), (10, 10), (-10, 10), (-10, -10))),
-    "triangle": _east(((10, -5.77), (0, 11.55), (-10, -5.77))),
-    "classic": _east(((0, 0), (-5, -9), (0, -7), (5, -9))),
-}
+# سازگاری با کدهای قدیمی‌تر که مستقیم SHAPE_POLYGONS را ایمپورت می‌کردند —
+# منبع اصلی حالا arcadeturtle._shapes.BUILTIN_POLYGONS است.
+SHAPE_POLYGONS = BUILTIN_POLYGONS
 
 
 @dataclass
@@ -73,10 +51,13 @@ class _Stamp:
     shape: str
     x: float
     y: float
-    heading: float
+    heading: float  # توجه: از قبل شامل tilt_angle است (heading نمایشی لحظه‌ی مهر)
     stretch: tuple[float, float]
     fill: Color
     outline: Color
+    shear: float = 0.0
+    outline_width: float = 1.0
+    matrix: tuple[float, float, float, float] | None = None
 
 
 @dataclass
@@ -85,24 +66,12 @@ class _TextItem:
     text: "arcade.Text"
 
 
-def transform_shape(shape: str, heading: float,
-                    stretch: tuple[float, float]) -> list[tuple[float, float]]:
-    """چندضلعی کرسر را مقیاس و دوران می‌دهد (هنوز جابه‌جا نشده — مختصات نسبی)."""
-    stretch_wid, stretch_len = stretch
-    angle = math.radians(heading_to_arcade_angle(heading))
-    cos_a, sin_a = math.cos(angle), math.sin(angle)
-    out = []
-    for px, py in SHAPE_POLYGONS[shape]:
-        sx = px * stretch_len   # در راستای جهت حرکت
-        sy = py * stretch_wid   # عمود بر جهت حرکت
-        out.append((sx * cos_a - sy * sin_a, sx * sin_a + sy * cos_a))
-    return out
-
-
 class Renderer:
-    def __init__(self, width: int = 800, height: int = 600):
+    def __init__(self, width: int = 800, height: int = 600,
+                 shapes: ShapeRegistry | None = None):
         self.width = width
         self.height = height
+        self.shapes = shapes if shapes is not None else ShapeRegistry()
         self.finished_lines: list[_Line] = []
         self.fills: list[_Fill] = []
         self.stamps: list[_Stamp] = []
@@ -136,9 +105,11 @@ class Renderer:
 
     def add_stamp(self, stamp_id: int, turtle_id: int, shape: str, x: float, y: float,
                   heading: float, stretch: tuple[float, float], fill: Color,
-                  outline: Color) -> None:
+                  outline: Color, shear: float = 0.0, outline_width: float = 1.0,
+                  matrix=None) -> None:
         self.stamps.append(
-            _Stamp(stamp_id, turtle_id, shape, x, y, heading, stretch, fill, outline)
+            _Stamp(stamp_id, turtle_id, shape, x, y, heading, stretch, fill, outline,
+                   shear, outline_width, matrix)
         )
 
     def clear_stamp(self, stamp_id: int) -> None:
@@ -211,13 +182,44 @@ class Renderer:
         self._shape_list = sl
         self._dirty = False
 
-    def _draw_cursor_polygon(self, shape: str, x: float, y: float, heading: float,
-                             stretch: tuple[float, float], fill: Color,
-                             outline: Color) -> None:
+    def _draw_shape(self, shape_name: str, x: float, y: float, heading: float,
+                    stretch: tuple[float, float], fill: Color, outline: Color,
+                    shear: float = 0.0, outline_width: float = 1.0,
+                    matrix=None) -> None:
+        """رسم کرسر/مهر بر اساس نوع شکل ثبت‌شده (polygon / compound / image)."""
+        shape = self.shapes.get(shape_name)
         ax, ay = self._to_a((x, y))
-        pts = [(ax + dx, ay + dy) for dx, dy in transform_shape(shape, heading, stretch)]
+
+        if shape.type == "image":
+            self._draw_image_shape(shape_name, ax, ay, heading, stretch)
+            return
+
+        if shape.type == "compound":
+            for poly, comp_fill, comp_outline in shape.data:
+                pts = [(ax + dx, ay + dy) for dx, dy in
+                       transform_polygon(poly, heading, stretch, shear, matrix)]
+                arcade.draw_polygon_filled(pts, comp_fill)
+                arcade.draw_polygon_outline(pts, comp_outline, outline_width)
+            return
+
+        # polygon ساده
+        poly = shape.data[0] if shape.data else ()
+        pts = [(ax + dx, ay + dy) for dx, dy in
+               transform_polygon(poly, heading, stretch, shear, matrix)]
         arcade.draw_polygon_filled(pts, fill)
-        arcade.draw_polygon_outline(pts, outline, 1)
+        arcade.draw_polygon_outline(pts, outline, outline_width)
+
+    def _draw_image_shape(self, shape_name: str, ax: float, ay: float,
+                          heading: float, stretch: tuple[float, float]) -> None:
+        texture = self.shapes.get_texture(shape_name)
+        if texture is None:
+            return
+        stretch_wid, stretch_len = stretch
+        w = texture.width * stretch_len
+        h = texture.height * stretch_wid
+        rect = XYWH(ax, ay, w, h)
+        angle = -heading_to_arcade_angle(heading)  # جهت چرخش تصویر در Arcade
+        arcade.draw_texture_rect(texture, rect, angle=angle)
 
     def draw(self, turtle_states) -> None:
         """turtle_states: وضعیت‌های بصری قابل‌نمایش (iterable of TurtleState)."""
@@ -230,11 +232,12 @@ class Renderer:
             x2, y2 = self._to_a(ln.end)
             arcade.draw_line(x1, y1, x2, y2, ln.color, ln.width)
         for s in self.stamps:
-            self._draw_cursor_polygon(s.shape, s.x, s.y, s.heading, s.stretch,
-                                      s.fill, s.outline)
+            self._draw_shape(s.shape, s.x, s.y, s.heading, s.stretch,
+                             s.fill, s.outline, s.shear, s.outline_width, s.matrix)
         for t in self.texts:
             t.text.draw()
         for st in turtle_states:
             if st.visible:
-                self._draw_cursor_polygon(st.shape, st.x, st.y, st.heading,
-                                          st.shape_size, st.fill_color, st.pen_color)
+                self._draw_shape(st.shape, st.x, st.y, st.heading + st.tilt_angle,
+                                 st.shape_size, st.fill_color, st.pen_color,
+                                 st.shear_factor, st.outline_width, st.shape_transform)

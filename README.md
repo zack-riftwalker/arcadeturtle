@@ -56,12 +56,17 @@ turtle.done()
 `pencolor`، `speed` • ترسیم: `circle`، `dot`، `stamp`، `clearstamp`،
 `clearstamps`، `begin_fill`، `end_fill`، `filling`، `fillcolor`، `color`،
 `write` (با پشتیبانی فارسی خودکار) • ظاهر: `shape`، `shapesize`/`turtlesize`،
-`hideturtle`/`ht`، `showturtle`/`st`، `isvisible` • کوئری: `position`/`pos`،
-`xcor`، `ycor`، `heading`، `towards`، `distance` • رویداد: `listen`، `onkey`،
+`resizemode`، `tilt`، `tiltangle`، `settiltangle`، `shearfactor`،
+`shapetransform`، `get_shapepoly`، `hideturtle`/`ht`، `showturtle`/`st`،
+`isvisible` • شکل‌های سفارشی: `register_shape`/`addshape` (چندضلعی، شکل
+ترکیبی compound، یا فایل تصویری PNG/GIF)، `Shape` class با `addcomponent`،
+`getshapes` • کوئری: `position`/`pos` (به‌صورت `Vec2D`)، `xcor`، `ycor`،
+`heading`، `towards`، `distance`، `teleport` • رویداد: `listen`، `onkey`،
 `onkeypress`، `onkeyrelease`، `onclick`/`onscreenclick`، `ontimer`، `tracer`،
 `update` • صفحه: `bgcolor`، `title`، `colormode`، `clear`، `reset`،
-`done`/`mainloop` • کلاس‌ها: `Turtle()` (چند نمونه مستقل)، `Screen()`
-(سینگلتون) با `setup`، `window_width`/`window_height`، `exitonclick`، `bye`.
+`done`/`mainloop` • کلاس‌ها: `Turtle()`/`Pen()`/`RawTurtle()`/`RawPen()` (چند
+نمونه مستقل)، `Screen()` (سینگلتون) با `setup`، `window_width`/
+`window_height`، `exitonclick`، `bye`، `Vec2D`.
 
 `clear`/`reset` دقیقاً مثل turtle اصلی تفکیک شده‌اند: `Turtle.clear()` فقط
 نقاشی‌های همان لاک‌پشت را پاک می‌کند، `Screen.clear()` همه‌چیز را، و
@@ -75,14 +80,23 @@ turtle.done()
 - **`colormode`**: مثل turtle اصلی کار می‌کند (پیش‌فرض ۲۵۵؛ برای رنگ‌های
   اعشاری اول `colormode(1.0)` را صدا بزن) — ولی برخلاف turtle اصلی، حالت رنگ
   سراسری است و به یک شیء Screen خاص گره نخورده.
-- **`shape`**: فقط شکل‌های آماده (`classic`, `arrow`, `turtle`, `circle`,
-  `square`, `triangle`) — نه تصویر GIF مثل turtle اصلی.
+- **شکل تصویری می‌چرخد** — برخلاف turtle اصلی که صراحتاً می‌گوید «شکل‌های
+  تصویری با چرخیدن لاک‌پشت نمی‌چرخند»، این‌جا عمداً برعکس تصمیم گرفته شده:
+  تصویر با heading می‌چرخد، چون هدف پشتیبانی از بازی‌های سبک Space Invaders/
+  مسابقه‌ای است که انتظار چرخش دارند. اگر تصویرت را با «رو به شرق» طراحی کنی
+  (نوکش رو به راست)، در heading=0 دقیقاً هم‌جهت با شکل‌های چندضلعی می‌ایستد.
+- **`shearfactor`/`shapetransform`**: ساده‌سازی‌شده نسبت به فرمول داخلی
+  turtle اصلی؛ نتیجه‌ی بصری مشابه است ولی از نظر عددی («تجزیه»ی دقیق ماتریس)
+  یکی نیست. برای اکثر اسکریپت‌های آموزشی که این‌ها را جداگانه صدا می‌زنند
+  فرقی احساس نمی‌شود.
+- **`resizemode("auto")`**: اندازه‌ی شکل برابر `pensize/5` محاسبه می‌شود —
+  یک تقریب مستند، نه فرمول دقیق stdlib.
 
 ### ❌ هنوز پشتیبانی نمی‌شود
 
-`setworldcoordinates`، `register_shape`/`addshape` (شکل سفارشی)، `bgpic`،
-`undo`/`setundobuffer`، `tiltangle`/`tilt`، `mode`، `textinput`/`numinput`،
-`getscreen()` چندپنجره‌ای (فقط یک پنجره در هر زمان)، و `write(move=True)`.
+`setworldcoordinates`، `bgpic`، `undo`/`setundobuffer`، `mode`،
+`textinput`/`numinput`، `getscreen()` چندپنجره‌ای (فقط یک پنجره در هر زمان)،
+و `write(move=True)`.
 
 این‌ها همگی به‌صراحت خطای فارسی مهربان می‌دهند، نه رفتار خاموش یا نادرست.
 

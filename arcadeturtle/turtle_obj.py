@@ -7,9 +7,10 @@ import math
 from ._commands import InstantCmd, MoveCmd, RotateCmd
 from ._engine import get_engine
 from ._errors import ArcadeTurtleError, require_number, resolve_color
-from ._renderer import SHAPE_POLYGONS
 from ._text_fa import PERSIAN_FONT, has_persian, shape_text
 from ._vec2d import Vec2D
+
+_RESIZE_MODES = ("auto", "user", "noresize")
 
 _SPEED_NAMES = {"fastest": 0, "fast": 10, "normal": 6, "slow": 3, "slowest": 1}
 
@@ -178,8 +179,15 @@ class Turtle:
         if width is None:
             return self._st.pen_size
         require_number(width, "pensize", "3")
-        self._st.pen_size = width
-        self._submit_visual(pen_size=width)
+        st = self._st
+        st.pen_size = width
+        changes = {"pen_size": width}
+        if st.resize_mode == "auto":
+            # ساده‌سازی مستندشده: در حالت auto اندازه‌ی شکل با ضخامت قلم رشد می‌کند
+            stretch = (width / 5.0, width / 5.0)
+            st.shape_size = stretch
+            changes["shape_size"] = stretch
+        self._submit_visual(**changes)
 
     def pencolor(self, *args):
         if not args:
@@ -283,11 +291,14 @@ class Turtle:
         st, eng, tid = self._st, self._eng, self._id
         sid = eng.renderer.reserve_stamp_id()
         shape, x, y = st.shape, st.x, st.y
-        heading, stretch = st.heading, st.shape_size
+        heading = st.heading + st.tilt_angle  # ظاهر لحظه‌ی مهر، شامل tilt
+        stretch = st.shape_size
         fill, outline = st.fill_color, st.pen_color
+        shear, outline_width, matrix = st.shear_factor, st.outline_width, st.shape_transform
 
         eng.submit(InstantCmd(tid, lambda: eng.renderer.add_stamp(
-            sid, tid, shape, x, y, heading, stretch, fill, outline)))
+            sid, tid, shape, x, y, heading, stretch, fill, outline,
+            shear, outline_width, matrix)))
         return sid
 
     def clearstamp(self, stamp_id):
@@ -385,27 +396,40 @@ class Turtle:
 
     def shapesize(self, stretch_wid=None, stretch_len=None, outline=None):
         st = self._st
-        if stretch_wid is None and stretch_len is None:
-            return (*st.shape_size, 1)
+        if stretch_wid is None and stretch_len is None and outline is None:
+            return (*st.shape_size, st.outline_width)
         if stretch_wid is not None and stretch_len is None:
             stretch_len = stretch_wid
         if stretch_wid is None:
             stretch_wid = st.shape_size[0]
+        if stretch_len is None:
+            stretch_len = st.shape_size[1]
         require_number(stretch_wid, "shapesize", "2")
         require_number(stretch_len, "shapesize", "2")
+        changes = {"shape_size": (stretch_wid, stretch_len), "shape_transform": None}
         st.shape_size = (stretch_wid, stretch_len)
-        self._submit_visual(shape_size=(stretch_wid, stretch_len))
+        st.shape_transform = None  # برگشت از حالت override خام shapetransform
+        if outline is not None:
+            require_number(outline, "shapesize", "3")
+            st.outline_width = outline
+            changes["outline_width"] = outline
+        # مثل stdlib: صدازدن shapesize با آرگومان یعنی resizemode="user"
+        st.resize_mode = "user"
+        self._submit_visual(**changes)
 
     def shape(self, name=None):
         if name is None:
             return self._st.shape
-        if name not in SHAPE_POLYGONS:
-            available = ", ".join(sorted(SHAPE_POLYGONS))
-            raise ArcadeTurtleError(
-                f"شکل '{name}' وجود ندارد. 🐢\nشکل‌های موجود: {available}"
-            )
+        self._eng.renderer.shapes.get(name)  # خطای مهربان می‌دهد اگر نبود
         self._st.shape = name
         self._submit_visual(shape=name)
+
+    def get_shapepoly(self):
+        """چندضلعیِ شکل فعلی؛ برای شکل ترکیبی/تصویری None برمی‌گرداند."""
+        s = self._eng.renderer.shapes.get(self._st.shape)
+        if s.type == "polygon" and s.data:
+            return s.data[0]
+        return None
 
     def hideturtle(self):
         self._st.visible = False
@@ -417,6 +441,75 @@ class Turtle:
 
     def isvisible(self):
         return self._st.visible
+
+    def resizemode(self, rmode=None):
+        st = self._st
+        if rmode is None:
+            return st.resize_mode
+        rmode = rmode.lower()
+        if rmode not in _RESIZE_MODES:
+            raise ArcadeTurtleError(
+                f"resizemode باید یکی از {_RESIZE_MODES} باشد، نه {rmode!r}"
+            )
+        st.resize_mode = rmode
+
+    def tilt(self, angle):
+        """چرخش ظاهری کرسر نسبت به مقدار فعلی‌اش — جهت حرکت (heading) عوض نمی‌شود."""
+        require_number(angle, "tilt", "30")
+        st = self._st
+        st.tilt_angle = (st.tilt_angle + angle) % 360.0
+        st.shape_transform = None
+        self._submit_visual(tilt_angle=st.tilt_angle, shape_transform=None)
+
+    def tiltangle(self, angle=None):
+        """مثل tilt، ولی مقدار مطلق را می‌گیرد/برمی‌گرداند، نه افزایشی."""
+        st = self._st
+        if angle is None:
+            return st.tilt_angle
+        require_number(angle, "tiltangle", "30")
+        st.tilt_angle = float(angle) % 360.0
+        st.shape_transform = None
+        self._submit_visual(tilt_angle=st.tilt_angle, shape_transform=None)
+
+    def settiltangle(self, angle):
+        """نام قدیمی/منسوخِ tiltangle در stdlib — برای سازگاری نگه داشته شده."""
+        self.tiltangle(angle)
+
+    def shearfactor(self, shear=None):
+        st = self._st
+        if shear is None:
+            return st.shear_factor
+        require_number(shear, "shearfactor", "0.5")
+        st.shear_factor = shear
+        st.resize_mode = "user"
+        st.shape_transform = None
+        self._submit_visual(shear_factor=shear, shape_transform=None)
+
+    def shapetransform(self, t11=None, t12=None, t21=None, t22=None):
+        """ماتریس ۲×۲ خام روی چندضلعی شکل (heading همچنان جدا اعمال می‌شود).
+
+        بدون آرگومان: ماتریس فعلی را برمی‌گرداند — یا override خام اگر
+        shapetransform قبلاً صدا زده شده، وگرنه معادل محاسبه‌شده از
+        shapesize/shearfactor فعلی.
+        با آرگومان: override خام را ثبت می‌کند؛ فراخوانی بعدی shapesize یا
+        tilt/shearfactor آن را پاک می‌کند و به ترکیب معمول برمی‌گردد.
+        """
+        st = self._st
+        if t11 is None and t12 is None and t21 is None and t22 is None:
+            if st.shape_transform is not None:
+                return st.shape_transform
+            wid, length = st.shape_size
+            shear = st.shear_factor
+            return (length, shear * length, 0.0, wid)
+        if None in (t11, t12, t21, t22):
+            raise ArcadeTurtleError(
+                "shapetransform یا بدون آرگومان صدا زده می‌شود (برای خواندن) "
+                "یا با هر چهار عدد t11, t12, t21, t22."
+            )
+        for name, val in (("t11", t11), ("t12", t12), ("t21", t21), ("t22", t22)):
+            require_number(val, "shapetransform", "1.0")
+        st.shape_transform = (t11, t12, t21, t22)
+        self._submit_visual(shape_transform=(t11, t12, t21, t22))
 
     # ---------- صفحه (سطح ماژول هم همین‌ها را صدا می‌زند) ----------
 
