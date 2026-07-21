@@ -55,7 +55,38 @@ class _Screen:
             return get_colormode()
         set_colormode(cmode)
 
+    def mode(self, mode=None):
+        """فقط 'standard' پشتیبانی می‌شود؛ 'logo'/'world' زاویه و مبدأ را
+        عوض می‌کنند که هنوز پیاده نشده — به‌جای رفتار نادرست خاموش، خطا می‌دهد."""
+        if mode is None:
+            return "standard"
+        if mode != "standard":
+            raise ArcadeTurtleError(
+                f"mode('{mode}') هنوز در ArcadeTurtle پشتیبانی نمی‌شود؛ فقط 'standard'.\n"
+                "mode('logo') و mode('world') در فازهای بعدی اضافه می‌شوند."
+            )
+
+    def getcanvas(self):
+        raise ArcadeTurtleError(
+            "getcanvas() در ArcadeTurtle معنا ندارد — رندر با Arcade/OpenGL "
+            "انجام می‌شود، نه بومِ Tkinter."
+        )
+
+    def turtles(self):
+        """فهرست همه لاک‌پشت‌های زنده (شبیه turtle استاندارد)."""
+        return list(get_engine().turtle_objects)
+
     # ---------- اجرا ----------
+
+    def delay(self, delay=None):
+        """در turtle استاندارد سرعت ترسیم را کنترل می‌کند؛ اینجا فقط ذخیره
+        می‌شود چون Arcade خودش با نرخ فریم ثابت رندر می‌کند — سازگاری بدون
+        شکستن اسکریپت‌هایی که delay(0) یا مشابه آن را برای تنظیم سرعت صدا می‌زنند."""
+        eng = get_engine()
+        if delay is None:
+            return getattr(eng, "pending_delay", 10)
+        require_number(delay, "delay", "10")
+        eng.pending_delay = delay
 
     def tracer(self, n=None, delay=None):
         eng = get_engine()
@@ -153,3 +184,25 @@ def reset_screen_singleton() -> None:
     """فقط برای تست‌ها."""
     global _instance
     _instance = None
+
+
+class TurtleScreen:
+    """فقط برای سازگاری import؛ در stdlib برای جاسازی turtle در یک بومِ
+    Tkinter دلخواه استفاده می‌شود — چیزی که در معماری تک‌پنجره‌ی Arcade
+    ما معنا ندارد. از Screen() استفاده کن."""
+
+    def __init__(self, *args, **kwargs):
+        raise ArcadeTurtleError(
+            "TurtleScreen مستقیم در ArcadeTurtle پشتیبانی نمی‌شود — "
+            "مخصوص جاسازی turtle در بومِ Tkinter دلخواه است.\n"
+            "به‌جایش از Screen() استفاده کن."
+        )
+
+
+class ScrolledCanvas:
+    """فقط برای سازگاری import؛ یک ویجت Tkinter است و معادلی در Arcade ندارد."""
+
+    def __init__(self, *args, **kwargs):
+        raise ArcadeTurtleError(
+            "ScrolledCanvas مخصوص Tkinter است و در ArcadeTurtle پشتیبانی نمی‌شود."
+        )

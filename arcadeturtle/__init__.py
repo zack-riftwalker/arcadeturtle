@@ -1,19 +1,23 @@
 """ArcadeTurtle — همان API ماژول turtle، روی موتور Arcade."""
 
-from ._errors import ArcadeTurtleError
+from ._errors import ArcadeTurtleError, Terminator
 from .api import *  # noqa: F401,F403 — API تابعی سراسری
 from .api import (  # صریح، برای ابزارهای تحلیل کد
-    backward, begin_fill, bgcolor, bk, back, circle, clear, clearstamp,
-    clearstamps, color, distance, done, dot, down, end_fill, fd, fillcolor,
-    filling, forward, goto, heading, hideturtle, home, ht, isdown, isvisible,
-    left, lt, mainloop, pencolor, pendown, pensize, penup, pd, pos, position,
-    pu, reset, right, rt, seth, setheading, setpos, setposition, setx, sety,
-    listen, onclick, onkey, onkeypress, onkeyrelease, onscreenclick, ontimer,
-    shape, shapesize, showturtle, speed, st, stamp, title, towards, tracer,
-    turtlesize, up, update, width, write, xcor, ycor,
+    addshape, backward, begin_fill, bgcolor, bgpic, bk, back, bye, circle,
+    clear, clearscreen, clearstamp, clearstamps, color, colormode, delay,
+    distance, done, dot, down, end_fill, exitonclick, fd, fillcolor,
+    filling, forward, getcanvas, goto, heading, hideturtle, home, ht,
+    isdown, isvisible, left, lt, mainloop, mode, pencolor, pendown,
+    pensize, penup, pd, pos, position, pu, register_shape, reset,
+    resetscreen, right, rt, screensize, seth, setheading, setpos,
+    setposition, setup, setworldcoordinates, setx, sety, listen, onclick,
+    onkey, onkeypress, onkeyrelease, onscreenclick, ontimer, shape,
+    shapesize, showturtle, speed, st, stamp, title, towards, tracer,
+    turtles, turtlesize, up, update, width, window_height, window_width,
+    write, xcor, ycor,
 )
-from .screen import Screen
-from .turtle_obj import Turtle
+from .screen import Screen, ScrolledCanvas, TurtleScreen
+from .turtle_obj import Pen, RawPen, RawTurtle, Turtle
 
 
 def getscreen():

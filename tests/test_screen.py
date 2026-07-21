@@ -1,10 +1,10 @@
 import pytest
 
 import arcadeturtle
-from arcadeturtle import Screen, Turtle, api
+from arcadeturtle import Pen, RawPen, RawTurtle, Screen, Turtle, api
 from arcadeturtle._engine import get_engine, reset_engine
 from arcadeturtle._errors import ArcadeTurtleError
-from arcadeturtle.screen import reset_screen_singleton
+from arcadeturtle.screen import ScrolledCanvas, TurtleScreen, reset_screen_singleton
 
 
 @pytest.fixture(autouse=True)
@@ -136,3 +136,103 @@ def test_screen_clear_leaves_turtles_alone():
 
     assert eng.renderer.finished_lines == []
     assert t.position() == pytest.approx((100, 0)), "clear نباید لاک‌پشت را جابه‌جا کند"
+
+
+# ---------- 10.1: وصل‌کردن سطح ماژول + alias کلاس‌ها ----------
+
+def test_module_level_window_functions_forward_to_screen():
+    arcadeturtle.setup(500, 400)
+    assert arcadeturtle.window_width() == 500
+    assert arcadeturtle.window_height() == 400
+    assert arcadeturtle.screensize() == (500, 400)
+
+
+def test_turtles_returns_live_turtle_objects():
+    assert arcadeturtle.turtles() == []
+    a = Turtle()
+    b = Turtle()
+    assert set(arcadeturtle.turtles()) == {a, b}
+    assert Screen().turtles() == arcadeturtle.turtles()
+
+
+def test_delay_getter_setter_roundtrip():
+    assert arcadeturtle.delay() == 10  # پیش‌فرض stdlib
+    arcadeturtle.delay(25)
+    assert arcadeturtle.delay() == 25
+    assert Screen().delay() == 25
+
+
+def test_mode_getter_and_unsupported_change():
+    assert arcadeturtle.mode() == "standard"
+    with pytest.raises(ArcadeTurtleError) as e:
+        arcadeturtle.mode("logo")
+    assert "پشتیبانی نمی‌شود" in str(e.value)
+
+
+def test_getcanvas_raises_friendly_error():
+    with pytest.raises(ArcadeTurtleError):
+        arcadeturtle.getcanvas()
+    with pytest.raises(ArcadeTurtleError):
+        Screen().getcanvas()
+
+
+def test_module_level_unsupported_forwarding():
+    """bgpic/register_shape/setworldcoordinates باید هم در سطح ماژول در دسترس
+    باشند و هم همان خطای مهربانِ Screen را بدهند."""
+    for fn in (
+        lambda: arcadeturtle.bgpic("x.png"),
+        lambda: arcadeturtle.register_shape("x", ((0, 0),)),
+        lambda: arcadeturtle.addshape("x", ((0, 0),)),
+        lambda: arcadeturtle.setworldcoordinates(0, 0, 1, 1),
+    ):
+        with pytest.raises(ArcadeTurtleError):
+            fn()
+
+
+def test_bye_and_clearscreen_resetscreen_forward():
+    Screen().setup(400, 300)
+    t = Turtle()
+    t.speed(0)
+    t.forward(50)
+    get_engine().tick(1 / 60)
+    arcadeturtle.clearscreen()
+    get_engine().tick(1 / 60)
+    assert get_engine().renderer.finished_lines == []
+
+    t.forward(50)
+    get_engine().tick(1 / 60)
+    arcadeturtle.resetscreen()
+    get_engine().tick(1 / 60)
+    assert t.position() == pytest.approx((0, 0))
+
+    arcadeturtle.bye()  # نباید خطا بدهد حتی وقتی پنجره‌ای ساخته نشده
+
+
+def test_pen_is_turtle_class():
+    assert Pen is Turtle
+    p = Pen()
+    assert isinstance(p, Turtle)
+
+
+def test_rawturtle_ignores_canvas_argument():
+    rt = RawTurtle(canvas=object())
+    assert isinstance(rt, Turtle)
+    rt.speed(0)
+    rt.forward(10)
+    assert rt.position() == pytest.approx((10, 0))
+
+
+def test_rawpen_is_subclass_of_rawturtle():
+    assert issubclass(RawPen, RawTurtle)
+    assert isinstance(RawPen(), RawTurtle)
+
+
+def test_turtlescreen_and_scrolledcanvas_raise_friendly_error():
+    with pytest.raises(ArcadeTurtleError):
+        TurtleScreen()
+    with pytest.raises(ArcadeTurtleError):
+        ScrolledCanvas()
+
+
+def test_terminator_importable_and_is_exception():
+    assert issubclass(arcadeturtle.Terminator, Exception)

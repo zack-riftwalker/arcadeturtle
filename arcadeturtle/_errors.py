@@ -7,6 +7,16 @@ class ArcadeTurtleError(Exception):
     """خطای آموزشی با پیام فارسی."""
 
 
+class Terminator(Exception):
+    """فقط برای سازگاری import (`from turtle import Terminator`).
+
+    در turtle استاندارد وقتی کاربر پنجره را می‌بندد ولی اسکریپت هنوز در
+    حلقه‌ی خودش دستور می‌دهد، این استثنا برای متوقف‌کردن آن حلقه raise
+    می‌شود. در ArcadeTurtle نیازی به آن نیست: بستن پنجره فقط باعث پایان
+    done()/mainloop() می‌شود و اسکریپت به همان‌جا برمی‌گردد، نه ادامه‌ی
+    یک حلقه‌ی بی‌نهایت داخل موتور."""
+
+
 # رنگ‌های رایج آموزشی (نام‌های Tk/CSS که در آموزش‌های turtle استفاده می‌شوند)
 COLOR_NAMES: dict[str, tuple[int, int, int]] = {
     "black": (0, 0, 0), "white": (255, 255, 255),

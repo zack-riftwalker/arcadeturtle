@@ -428,3 +428,16 @@ class Turtle:
     pos = position
     st = showturtle
     ht = hideturtle
+
+
+class RawTurtle(Turtle):
+    """سازگاری: در turtle استاندارد RawTurtle به یک canvas صریح نیاز دارد؛
+    چون ArcadeTurtle فقط یک پنجره دارد، آرگومان canvas پذیرفته و نادیده
+    گرفته می‌شود. زیرکلاس است نه تابع، تا isinstance() هم درست کار کند."""
+
+    def __init__(self, canvas=None, shape="classic", visible=True):
+        super().__init__(shape=shape, visible=visible)
+
+
+RawPen = RawTurtle
+Pen = Turtle  # دقیقاً مثل stdlib: Pen همان کلاس Turtle است، نه زیرکلاس

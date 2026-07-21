@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from ._engine import get_engine
 from ._errors import get_colormode, resolve_color, set_colormode
+from .screen import Screen as _screen
 from .turtle_obj import Turtle
 
 _default_turtle: Turtle | None = None
@@ -144,6 +145,51 @@ def done():
 
 def mainloop():
     done()
+
+
+# ---------- پنجره (سطح ماژول — قبلاً فقط روی Screen() بود) ----------
+
+def setup(width=800, height=600, startx=None, starty=None):
+    _screen().setup(width, height, startx, starty)
+
+
+def window_width(): return _screen().window_width()
+def window_height(): return _screen().window_height()
+
+
+def screensize(canvwidth=None, canvheight=None, bg=None):
+    return _screen().screensize(canvwidth, canvheight, bg)
+
+
+def bye(): _screen().bye()
+
+
+def exitonclick(): _screen().exitonclick()
+
+
+def clearscreen(): _screen().clear()
+def resetscreen(): _screen().reset()
+
+
+def mode(mode=None): return _screen().mode(mode)
+def delay(delay=None): return _screen().delay(delay)
+def turtles(): return _screen().turtles()
+def getcanvas(): return _screen().getcanvas()
+
+
+def register_shape(*args, **kwargs):
+    return _screen().register_shape(*args, **kwargs)
+
+
+addshape = register_shape
+
+
+def bgpic(*args, **kwargs):
+    return _screen().bgpic(*args, **kwargs)
+
+
+def setworldcoordinates(*args, **kwargs):
+    return _screen().setworldcoordinates(*args, **kwargs)
 
 
 # ---------- نام‌های کوتاه ----------
