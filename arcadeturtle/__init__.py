@@ -12,6 +12,11 @@ from .api import (  # صریح، برای ابزارهای تحلیل کد
     shape, shapesize, showturtle, speed, st, stamp, title, towards, tracer,
     turtlesize, up, update, width, write, xcor, ycor,
 )
+from .screen import Screen
 from .turtle_obj import Turtle
+
+
+def getscreen():
+    return Screen()
 
 __version__ = "0.1.0"
