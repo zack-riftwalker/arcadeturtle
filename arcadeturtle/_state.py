@@ -26,6 +26,9 @@ class TurtleState:
     outline_width: float = 1.0
     shape_transform: tuple[float, float, float, float] | None = None  # override خام
     resize_mode: str = "noresize"  # فقط منطقی — روی shape_size وقتی pensize عوض می‌شود اثر می‌گذارد
+    angle_full_circle: float = 360.0  # واحد زاویه: چند «واحد» = یک دور کامل (degrees()/radians())
+    poly_active: bool = False
+    poly_points: list[tuple[float, float]] | None = None  # None = هرگز begin_poly نشده
 
     def move_forward(self, dist: float) -> tuple[tuple[float, float], tuple[float, float]]:
         """حرکت به جلو در جهت heading. برمی‌گرداند (نقطه قبل، نقطه بعد)."""
@@ -59,6 +62,7 @@ class TurtleState:
             "x", "y", "heading", "pen_down", "pen_color", "pen_size",
             "fill_color", "speed", "visible", "shape", "shape_size", "filling",
             "tilt_angle", "shear_factor", "outline_width", "shape_transform",
+            "resize_mode", "angle_full_circle",
         )})
         c.fill_points = list(self.fill_points)
         return c

@@ -3,12 +3,14 @@
 from ._errors import ArcadeTurtleError, Terminator
 from .api import *  # noqa: F401,F403 — API تابعی سراسری
 from .api import (  # صریح، برای ابزارهای تحلیل کد
-    addshape, backward, begin_fill, bgcolor, bgpic, bk, back, bye, circle,
-    clear, clearscreen, clearstamp, clearstamps, color, colormode, delay,
-    distance, done, dot, down, end_fill, exitonclick, fd, fillcolor,
-    filling, forward, getcanvas, get_shapepoly, getshapes, goto, heading,
+    addshape, backward, begin_fill, begin_poly, bgcolor, bgpic, bk, back,
+    bye, circle, clear, clearscreen, clearstamp, clearstamps, clone, color,
+    colormode, degrees, delay, distance, done, dot, down, end_fill,
+    end_poly, exitonclick, fd, fillcolor, filling, forward, getcanvas,
+    getpen, get_poly, get_shapepoly, getshapes, getturtle, goto, heading,
     hideturtle, home, ht, isdown, isvisible, left, lt, mainloop, mode,
-    pencolor, pendown, pensize, penup, pd, pos, position, pu, register_shape,
+    pen, pencolor, pendown, pensize, penup, pd, pos, position, pu,
+    radians, register_shape,
     reset, resetscreen, resizemode, right, rt, screensize, seth, setheading,
     setpos, setposition, settiltangle, setup, setworldcoordinates, setx,
     sety, shapetransform, shearfactor, teleport, tilt, tiltangle, listen,

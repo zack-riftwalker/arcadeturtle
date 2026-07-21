@@ -61,14 +61,18 @@ turtle.done()
 `isvisible` • شکل‌های سفارشی: `register_shape`/`addshape` (چندضلعی، شکل
 ترکیبی compound، یا فایل تصویری PNG/GIF)، `Shape` class با `addcomponent`،
 `getshapes` • کوئری: `position`/`pos` (به‌صورت `Vec2D`)، `xcor`، `ycor`،
-`heading`، `towards`، `distance`، `teleport` • رویداد: `listen`، `onkey`،
+`heading`، `towards`، `distance`، `teleport`، `degrees`، `radians` (واحد
+اندازه‌گیری زاویه، جداگانه برای هر لاک‌پشت) • رویداد: `listen`، `onkey`،
 `onkeypress`، `onkeyrelease`، `onclick`/`onscreenclick`، `ontimer`، `tracer`،
 `update`، `Turtle.onclick`/`ondrag`/`onrelease` (کلیک/کشیدن روی خودِ
 لاک‌پشت) • برگشت: `undo`، `setundobuffer`، `undobufferentries` (بافر
-جداگانه برای هر لاک‌پشت) • صفحه: `bgcolor`، `title`، `colormode`، `clear`،
-`reset`، `done`/`mainloop` • کلاس‌ها: `Turtle()`/`Pen()`/`RawTurtle()`/
-`RawPen()` (چند نمونه مستقل)، `Screen()` (سینگلتون) با `setup`،
-`window_width`/`window_height`، `exitonclick`، `bye`، `Vec2D`.
+جداگانه برای هر لاک‌پشت) • ابزار: `pen` (گرفتن/ست‌کردن دسته‌ای وضعیت قلم)،
+`getturtle`/`getpen`، `clone`، `begin_poly`/`end_poly`/`get_poly` (ضبط
+چندضلعی دلخواه برای `register_shape` بعدی) • صفحه: `bgcolor`، `title`،
+`colormode`، `clear`، `reset`، `done`/`mainloop` • کلاس‌ها:
+`Turtle()`/`Pen()`/`RawTurtle()`/`RawPen()` (چند نمونه مستقل)، `Screen()`
+(سینگلتون) با `setup`، `window_width`/`window_height`، `exitonclick`،
+`bye`، `Vec2D`.
 
 `clear`/`reset` دقیقاً مثل turtle اصلی تفکیک شده‌اند: `Turtle.clear()` فقط
 نقاشی‌های همان لاک‌پشت را پاک می‌کند، `Screen.clear()` همه‌چیز را، و

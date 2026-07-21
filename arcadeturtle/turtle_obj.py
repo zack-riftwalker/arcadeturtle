@@ -6,7 +6,7 @@ import math
 from dataclasses import dataclass, field
 
 from ._commands import InstantCmd, MoveCmd, RotateCmd
-from ._engine import get_engine
+from ._engine import TurtleRuntime, get_engine
 from ._errors import ArcadeTurtleError, require_number, resolve_color
 from ._text_fa import PERSIAN_FONT, has_persian, shape_text
 from ._vec2d import Vec2D
@@ -121,6 +121,15 @@ class Turtle:
         st = self._st
         if st.filling:
             st.fill_points.append((st.x, st.y))
+        if st.poly_active:
+            st.poly_points.append((st.x, st.y))
+
+    def _to_deg(self, units: float) -> float:
+        """واحد زاویه‌ی کاربر (بسته به degrees()/radians()) → درجه‌ی داخلی."""
+        return units * 360.0 / self._st.angle_full_circle
+
+    def _to_units(self, deg: float) -> float:
+        return deg * self._st.angle_full_circle / 360.0
 
     def _push_undo(self, record) -> None:
         if self._undo_buffer_size <= 0:
@@ -149,16 +158,18 @@ class Turtle:
 
     def left(self, angle):
         require_number(angle, "left", "90")
+        deg = self._to_deg(angle)
         start = self._st.heading
-        self._st.rotate(angle)
-        self._submit_rotate(start, angle)
+        self._st.rotate(deg)
+        self._submit_rotate(start, deg)
         self._push_undo(_UndoRotate(start))
 
     def right(self, angle):
         require_number(angle, "right", "90")
+        deg = self._to_deg(angle)
         start = self._st.heading
-        self._st.rotate(-angle)
-        self._submit_rotate(start, -angle)
+        self._st.rotate(-deg)
+        self._submit_rotate(start, -deg)
         self._push_undo(_UndoRotate(start))
 
     def goto(self, x, y=None):
@@ -225,12 +236,13 @@ class Turtle:
     def setheading(self, to_angle):
         require_number(to_angle, "setheading", "90")
         st = self._st
+        to_angle_deg = self._to_deg(to_angle)
         # مثل turtle اصلی: چرخش از کوتاه‌ترین مسیر
-        delta = (float(to_angle) - st.heading) % 360.0
+        delta = (to_angle_deg - st.heading) % 360.0
         if delta > 180.0:
             delta -= 360.0
         start = st.heading
-        st.set_heading(to_angle)
+        st.set_heading(to_angle_deg)
         self._submit_rotate(start, delta)
         self._push_undo(_UndoRotate(start))
 
@@ -293,6 +305,52 @@ class Turtle:
         self._st.speed = value
         self._submit_visual(speed=value)
 
+    def pen(self, pen=None, **pendict):
+        """گرفتن/ست‌کردن دسته‌ای ویژگی‌های قلم — برای ذخیره و بازیابی کامل
+        وضعیت با یک فراخوانی (مثل turtle.pen(fillcolor="red", pensize=3))."""
+        st = self._st
+        if pen is None and not pendict:
+            return {
+                "shown": st.visible,
+                "pendown": st.pen_down,
+                "pencolor": self._pen_color_raw,
+                "fillcolor": self._fill_color_raw,
+                "pensize": st.pen_size,
+                "speed": st.speed,
+                "resizemode": st.resize_mode,
+                "stretchfactor": st.shape_size,
+                "shearfactor": st.shear_factor,
+                "outline": st.outline_width,
+                "tilt": st.tilt_angle,
+            }
+        p = dict(pen) if pen else {}
+        p.update(pendict)
+        if "shown" in p:
+            (self.showturtle if p["shown"] else self.hideturtle)()
+        if "pendown" in p:
+            (self.pendown if p["pendown"] else self.penup)()
+        if "pencolor" in p:
+            self.pencolor(p["pencolor"])
+        if "fillcolor" in p:
+            self.fillcolor(p["fillcolor"])
+        if "pensize" in p:
+            self.pensize(p["pensize"])
+        if "speed" in p:
+            self.speed(p["speed"])
+        if "resizemode" in p:
+            self.resizemode(p["resizemode"])
+        if "stretchfactor" in p:
+            sf = p["stretchfactor"]
+            if isinstance(sf, (int, float)):
+                sf = (sf, sf)
+            self.shapesize(sf[0], sf[1])
+        if "shearfactor" in p:
+            self.shearfactor(p["shearfactor"])
+        if "outline" in p:
+            self.shapesize(outline=p["outline"])
+        if "tilt" in p:
+            self.tiltangle(p["tilt"])
+
     # ---------- کوئری‌ها (از state منطقی) ----------
 
     def position(self):
@@ -305,7 +363,7 @@ class Turtle:
         return self._st.y
 
     def heading(self):
-        return self._st.heading
+        return self._to_units(self._st.heading)
 
     def towards(self, x, y=None):
         if y is None:
@@ -313,7 +371,7 @@ class Turtle:
                 x, y = x.position()
             else:
                 x, y = x
-        return self._st.towards(x, y)
+        return self._to_units(self._st.towards(x, y))
 
     def distance(self, x, y=None):
         if y is None:
@@ -322,6 +380,35 @@ class Turtle:
             else:
                 x, y = x
         return self._st.distance_to(x, y)
+
+    def degrees(self, fullcircle=360.0):
+        """واحد اندازه‌گیری زاویه را عوض می‌کند (روی left/right/setheading/
+        heading/towards همین لاک‌پشت اثر می‌گذارد؛ heading داخلی همیشه به
+        درجه‌ی معمولی ذخیره می‌شود)."""
+        require_number(fullcircle, "degrees", "360")
+        self._st.angle_full_circle = fullcircle
+
+    def radians(self):
+        self._st.angle_full_circle = math.tau
+
+    def getturtle(self):
+        return self
+
+    getpen = getturtle
+
+    def clone(self):
+        """کپیِ کامل: همان شکل/رنگ/موقعیت/جهت — لاک‌پشتِ مستقلِ جدید."""
+        eng = self._eng
+        new = Turtle.__new__(Turtle)
+        new._id = eng.new_turtle()
+        eng.turtle_objects.add(new)
+        new._pen_color_raw = self._pen_color_raw
+        new._fill_color_raw = self._fill_color_raw
+        new._undo_stack = []
+        new._undo_buffer_size = DEFAULT_UNDO_BUFFER_SIZE
+        logical = self._st.copy_pose()
+        eng.turtles[new._id] = TurtleRuntime(logical=logical, visual=logical.copy_pose())
+        return new
 
     # ---------- ترسیم پیشرفته ----------
 
@@ -411,6 +498,20 @@ class Turtle:
 
     def filling(self):
         return self._st.filling
+
+    # ---------- ضبط چندضلعی دلخواه (برای register_shape بعدی) ----------
+
+    def begin_poly(self):
+        st = self._st
+        st.poly_active = True
+        st.poly_points = [(st.x, st.y)]
+
+    def end_poly(self):
+        self._st.poly_active = False
+
+    def get_poly(self):
+        points = self._st.poly_points
+        return tuple(points) if points is not None else None
 
     def fillcolor(self, *args):
         if not args:

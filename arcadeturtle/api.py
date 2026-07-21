@@ -63,6 +63,15 @@ turtlesize = shapesize
 def undo(): _t().undo()
 def setundobuffer(size): _t().setundobuffer(size)
 def undobufferentries(): return _t().undobufferentries()
+def pen(pen=None, **pendict): return _t().pen(pen, **pendict)
+def begin_poly(): _t().begin_poly()
+def end_poly(): _t().end_poly()
+def get_poly(): return _t().get_poly()
+def clone(): return _t().clone()
+def getturtle(): return _t()
+getpen = getturtle
+def degrees(fullcircle=360.0): _t().degrees(fullcircle)
+def radians(): _t().radians()
 
 # ---------- کوئری ----------
 
