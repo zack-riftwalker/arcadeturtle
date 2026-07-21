@@ -113,12 +113,14 @@ class Renderer:
             self.fills.append(_Fill(list(points), color))
             self._dirty = True
 
-    def add_stamp(self, shape: str, x: float, y: float, heading: float,
-                  stretch: tuple[float, float], fill: Color, outline: Color) -> int:
+    def reserve_stamp_id(self) -> int:
         sid = self._next_stamp_id
         self._next_stamp_id += 1
-        self.stamps.append(_Stamp(sid, shape, x, y, heading, stretch, fill, outline))
         return sid
+
+    def add_stamp(self, stamp_id: int, shape: str, x: float, y: float, heading: float,
+                  stretch: tuple[float, float], fill: Color, outline: Color) -> None:
+        self.stamps.append(_Stamp(stamp_id, shape, x, y, heading, stretch, fill, outline))
 
     def clear_stamp(self, stamp_id: int) -> None:
         self.stamps = [s for s in self.stamps if s.stamp_id != stamp_id]

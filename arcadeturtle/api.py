@@ -41,6 +41,24 @@ def pensize(width=None): return _t().pensize(width)
 def pencolor(*args): return _t().pencolor(*args)
 def speed(s=None): return _t().speed(s)
 
+# ---------- ترسیم پیشرفته ----------
+
+def circle(radius, extent=None, steps=None): _t().circle(radius, extent, steps)
+def dot(size=None, color=None): _t().dot(size, color)
+def stamp(): return _t().stamp()
+def clearstamp(stamp_id): _t().clearstamp(stamp_id)
+def clearstamps(n=None): _t().clearstamps(n)
+def begin_fill(): _t().begin_fill()
+def end_fill(): _t().end_fill()
+def filling(): return _t().filling()
+def fillcolor(*args): return _t().fillcolor(*args)
+def color(*args): return _t().color(*args)
+def write(arg, move=False, align="left", font=("Arial", 8, "normal")):
+    _t().write(arg, move, align, font)
+def shapesize(stretch_wid=None, stretch_len=None, outline=None):
+    return _t().shapesize(stretch_wid, stretch_len, outline)
+turtlesize = shapesize
+
 # ---------- کوئری ----------
 
 def position(): return _t().position()

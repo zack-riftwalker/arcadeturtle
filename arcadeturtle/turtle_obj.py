@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import math
+
 from ._commands import InstantCmd, MoveCmd, RotateCmd
 from ._engine import get_engine
 from ._errors import ArcadeTurtleError, require_number, resolve_color
 from ._renderer import SHAPE_POLYGONS
+from ._text_fa import PERSIAN_FONT, has_persian, shape_text
 
 _SPEED_NAMES = {"fastest": 0, "fast": 10, "normal": 6, "slow": 3, "slowest": 1}
 
@@ -194,7 +197,152 @@ class Turtle:
                 x, y = x
         return self._st.distance_to(x, y)
 
+    # ---------- ترسیم پیشرفته ----------
+
+    def circle(self, radius, extent=None, steps=None):
+        """دایره/کمان — مرکز در سمت چپ لاک‌پشت (همان معناشناسی turtle).
+
+        با همان الگوریتم turtle استاندارد به پاره‌خط‌های ریز تبدیل می‌شود؛
+        بنابراین انیمیشن و پرکردن (fill) خودبه‌خود کار می‌کنند.
+        """
+        require_number(radius, "circle", "50")
+        if extent is None:
+            extent = 360
+        require_number(extent, "circle")
+        if steps is None:
+            frac = abs(extent) / 360
+            steps = 1 + int(min(11.5 + abs(radius) / 6.0, 59.0) * frac)
+        w = extent / steps
+        w2 = 0.5 * w
+        seg = 2.0 * radius * math.sin(math.radians(w2))
+        if radius < 0:
+            seg, w, w2 = -seg, -w, -w2
+        self.left(w2)
+        for _ in range(steps):
+            self.forward(seg)
+            self.left(w)
+        self.left(-w2)
+
+    def dot(self, size=None, color=None):
+        st = self._st
+        if size is None:
+            size = max(st.pen_size + 4, st.pen_size * 2)
+        else:
+            require_number(size, "dot", "10")
+        rgb = resolve_color(color) if color is not None else st.pen_color
+        cx, cy = st.x, st.y
+        r = size / 2
+        points = [
+            (cx + r * math.cos(math.tau * i / 24), cy + r * math.sin(math.tau * i / 24))
+            for i in range(24)
+        ]
+        eng = self._eng
+        eng.submit(InstantCmd(self._id, lambda: eng.renderer.add_fill(points, rgb)))
+
+    def stamp(self):
+        st, eng = self._st, self._eng
+        sid = eng.renderer.reserve_stamp_id()
+        shape, x, y = st.shape, st.x, st.y
+        heading, stretch = st.heading, st.shape_size
+        fill, outline = st.fill_color, st.pen_color
+
+        eng.submit(InstantCmd(self._id, lambda: eng.renderer.add_stamp(
+            sid, shape, x, y, heading, stretch, fill, outline)))
+        return sid
+
+    def clearstamp(self, stamp_id):
+        eng = self._eng
+        eng.submit(InstantCmd(self._id, lambda: eng.renderer.clear_stamp(stamp_id)))
+
+    def clearstamps(self, n=None):
+        eng = self._eng
+        eng.submit(InstantCmd(self._id, lambda: eng.renderer.stamps.clear()))
+
+    # ---------- پرکردن ----------
+
+    def begin_fill(self):
+        st = self._st
+        st.filling = True
+        st.fill_points = [(st.x, st.y)]
+
+    def end_fill(self):
+        st = self._st
+        if not st.filling:
+            return
+        st.filling = False
+        points = list(st.fill_points)
+        st.fill_points = []
+        rgb = st.fill_color
+        eng = self._eng
+        eng.submit(InstantCmd(self._id, lambda: eng.renderer.add_fill(points, rgb)))
+
+    def filling(self):
+        return self._st.filling
+
+    def fillcolor(self, *args):
+        if not args:
+            return self._fill_color_raw
+        raw = args[0] if len(args) == 1 else tuple(args)
+        rgb = resolve_color(raw)
+        self._fill_color_raw = raw
+        self._st.fill_color = rgb
+        self._submit_visual(fill_color=rgb)
+
+    def color(self, *args):
+        if not args:
+            return (self._pen_color_raw, self._fill_color_raw)
+        if len(args) == 1:
+            self.pencolor(args[0])
+            self.fillcolor(args[0])
+        elif len(args) == 2:
+            self.pencolor(args[0])
+            self.fillcolor(args[1])
+        else:  # سه عدد = یک رنگ RGB برای هر دو
+            self.pencolor(args)
+            self.fillcolor(args)
+
+    # ---------- متن ----------
+
+    def write(self, arg, move=False, align="left", font=("Arial", 8, "normal")):
+        """نوشتن متن در محل لاک‌پشت — فارسی خودکار shaping و RTL می‌شود."""
+        import arcade
+
+        text = str(arg)
+        st, eng = self._st, self._eng
+        x, y, rgb = st.x, st.y, st.pen_color
+        font_name, font_size, *style = font if isinstance(font, (tuple, list)) else (font, 8)
+        style_str = " ".join(str(s).lower() for s in style)
+        if has_persian(text):
+            font_name = PERSIAN_FONT
+        shaped = shape_text(text)
+        anchor = {"left": "left", "center": "center", "right": "right"}.get(align, "left")
+
+        def make_text():
+            ax, ay = eng.renderer._to_a((x, y))
+            t = arcade.Text(
+                shaped, x=ax, y=ay, color=(*rgb, 255),
+                font_size=font_size, font_name=font_name,
+                anchor_x=anchor, anchor_y="baseline",
+                bold="bold" in style_str, italic="italic" in style_str,
+            )
+            eng.renderer.add_text(t)
+
+        eng.submit(InstantCmd(self._id, make_text))
+
     # ---------- ظاهر ----------
+
+    def shapesize(self, stretch_wid=None, stretch_len=None, outline=None):
+        st = self._st
+        if stretch_wid is None and stretch_len is None:
+            return (*st.shape_size, 1)
+        if stretch_wid is not None and stretch_len is None:
+            stretch_len = stretch_wid
+        if stretch_wid is None:
+            stretch_wid = st.shape_size[0]
+        require_number(stretch_wid, "shapesize", "2")
+        require_number(stretch_len, "shapesize", "2")
+        st.shape_size = (stretch_wid, stretch_len)
+        self._submit_visual(shape_size=(stretch_wid, stretch_len))
 
     def shape(self, name=None):
         if name is None:
@@ -249,6 +397,7 @@ class Turtle:
         eng.submit(InstantCmd(tid, snap))
 
     # نام‌های کوتاه (aliases) مثل turtle اصلی
+    turtlesize = shapesize
     fd = forward
     bk = backward
     back = backward
