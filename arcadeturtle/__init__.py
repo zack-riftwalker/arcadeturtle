@@ -8,8 +8,9 @@ from .api import (  # صریح، برای ابزارهای تحلیل کد
     filling, forward, goto, heading, hideturtle, home, ht, isdown, isvisible,
     left, lt, mainloop, pencolor, pendown, pensize, penup, pd, pos, position,
     pu, reset, right, rt, seth, setheading, setpos, setposition, setx, sety,
-    shape, shapesize, showturtle, speed, st, stamp, title, towards, turtlesize,
-    up, width, write, xcor, ycor,
+    listen, onclick, onkey, onkeypress, onkeyrelease, onscreenclick, ontimer,
+    shape, shapesize, showturtle, speed, st, stamp, title, towards, tracer,
+    turtlesize, up, update, width, write, xcor, ycor,
 )
 from .turtle_obj import Turtle
 

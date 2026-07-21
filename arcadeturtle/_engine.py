@@ -105,6 +105,14 @@ class Engine:
     def submit(self, cmd) -> None:
         self.queue.append(cmd)
 
+    def set_tracer(self, n: int) -> None:
+        self.tracer_n = n
+        if n == 0 and self.active_cmd is not None:
+            # فرمان نیمه‌کاره فوراً تمام شود
+            self.renderer.clear_live_line()
+            self._apply_instant(self.active_cmd)
+            self.active_cmd = None
+
     def tick(self, dt: float) -> None:
         remaining = dt
         while True:

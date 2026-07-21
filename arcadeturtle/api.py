@@ -75,6 +75,46 @@ def hideturtle(): _t().hideturtle()
 def showturtle(): _t().showturtle()
 def isvisible(): return _t().isvisible()
 
+# ---------- رویدادها ----------
+
+def listen(xdummy=None, ydummy=None):
+    """سازگاری با turtle — پنجره Arcade همیشه در حال گوش‌دادن است."""
+
+
+def onkey(fun, key):
+    get_engine().events.bind_key_press(fun, key)
+
+
+def onkeypress(fun, key=None):
+    get_engine().events.bind_key_press(fun, key)
+
+
+def onkeyrelease(fun, key):
+    get_engine().events.bind_key_release(fun, key)
+
+
+def onclick(fun, btn=1, add=None):
+    get_engine().events.bind_click(fun, btn)
+
+
+onscreenclick = onclick
+
+
+def ontimer(fun, t=0):
+    get_engine().events.schedule_timer(fun, t)
+
+
+def tracer(n=None, delay=None):
+    eng = get_engine()
+    if n is None:
+        return eng.tracer_n
+    eng.set_tracer(n)
+
+
+def update():
+    """سازگاری با turtle — Arcade خودش هر فریم صفحه را تازه می‌کند."""
+
+
 # ---------- صفحه ----------
 
 def bgcolor(*args):
