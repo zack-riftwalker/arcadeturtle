@@ -47,6 +47,7 @@ SHAPE_POLYGONS: dict[str, tuple[tuple[float, float], ...]] = {
 
 @dataclass
 class _Line:
+    turtle_id: int
     start: Point
     end: Point
     color: Color
@@ -55,6 +56,7 @@ class _Line:
 
 @dataclass
 class _Fill:
+    turtle_id: int
     points: list[Point]
     color: Color
 
@@ -62,6 +64,7 @@ class _Fill:
 @dataclass
 class _Stamp:
     stamp_id: int
+    turtle_id: int
     shape: str
     x: float
     y: float
@@ -69,6 +72,12 @@ class _Stamp:
     stretch: tuple[float, float]
     fill: Color
     outline: Color
+
+
+@dataclass
+class _TextItem:
+    turtle_id: int
+    text: "arcade.Text"
 
 
 def transform_shape(shape: str, heading: float,
@@ -92,7 +101,7 @@ class Renderer:
         self.finished_lines: list[_Line] = []
         self.fills: list[_Fill] = []
         self.stamps: list[_Stamp] = []
-        self.texts: list[arcade.Text] = []
+        self.texts: list[_TextItem] = []
         self.live_line: _Line | None = None
         self._dirty = True
         self._shape_list: ShapeElementList | None = None
@@ -104,13 +113,14 @@ class Renderer:
         self.width, self.height = width, height
         self._dirty = True
 
-    def add_line(self, start: Point, end: Point, color: Color, width: float) -> None:
-        self.finished_lines.append(_Line(start, end, color, width))
+    def add_line(self, turtle_id: int, start: Point, end: Point, color: Color,
+                 width: float) -> None:
+        self.finished_lines.append(_Line(turtle_id, start, end, color, width))
         self._dirty = True
 
-    def add_fill(self, points: list[Point], color: Color) -> None:
+    def add_fill(self, turtle_id: int, points: list[Point], color: Color) -> None:
         if len(points) >= 3:
-            self.fills.append(_Fill(list(points), color))
+            self.fills.append(_Fill(turtle_id, list(points), color))
             self._dirty = True
 
     def reserve_stamp_id(self) -> int:
@@ -118,28 +128,50 @@ class Renderer:
         self._next_stamp_id += 1
         return sid
 
-    def add_stamp(self, stamp_id: int, shape: str, x: float, y: float, heading: float,
-                  stretch: tuple[float, float], fill: Color, outline: Color) -> None:
-        self.stamps.append(_Stamp(stamp_id, shape, x, y, heading, stretch, fill, outline))
+    def add_stamp(self, stamp_id: int, turtle_id: int, shape: str, x: float, y: float,
+                  heading: float, stretch: tuple[float, float], fill: Color,
+                  outline: Color) -> None:
+        self.stamps.append(
+            _Stamp(stamp_id, turtle_id, shape, x, y, heading, stretch, fill, outline)
+        )
 
     def clear_stamp(self, stamp_id: int) -> None:
         self.stamps = [s for s in self.stamps if s.stamp_id != stamp_id]
 
-    def add_text(self, text: arcade.Text) -> None:
-        self.texts.append(text)
+    def clear_stamps_of(self, turtle_id: int, n: int | None = None) -> None:
+        mine = [s for s in self.stamps if s.turtle_id == turtle_id]
+        if n is None or n == 0:
+            remove = set(id(s) for s in mine)
+        elif n > 0:
+            remove = set(id(s) for s in mine[:n])
+        else:
+            remove = set(id(s) for s in mine[n:])
+        self.stamps = [s for s in self.stamps if id(s) not in remove]
+
+    def add_text(self, turtle_id: int, text: "arcade.Text") -> None:
+        self.texts.append(_TextItem(turtle_id, text))
 
     def set_live_line(self, start: Point, end: Point, color: Color, width: float) -> None:
-        self.live_line = _Line(start, end, color, width)
+        self.live_line = _Line(-1, start, end, color, width)
 
     def clear_live_line(self) -> None:
         self.live_line = None
 
     def clear_all(self) -> None:
+        """معادل Screen.clear() — همه‌چیز از همه لاک‌پشت‌ها پاک می‌شود."""
         self.finished_lines.clear()
         self.fills.clear()
         self.stamps.clear()
         self.texts.clear()
         self.live_line = None
+        self._dirty = True
+
+    def clear_turtle(self, turtle_id: int) -> None:
+        """معادل Turtle.clear() — فقط نقاشی‌های همین لاک‌پشت پاک می‌شود."""
+        self.finished_lines = [ln for ln in self.finished_lines if ln.turtle_id != turtle_id]
+        self.fills = [f for f in self.fills if f.turtle_id != turtle_id]
+        self.stamps = [s for s in self.stamps if s.turtle_id != turtle_id]
+        self.texts = [t for t in self.texts if t.turtle_id != turtle_id]
         self._dirty = True
 
     # ---------- رسم ----------
@@ -181,7 +213,7 @@ class Renderer:
             self._draw_cursor_polygon(s.shape, s.x, s.y, s.heading, s.stretch,
                                       s.fill, s.outline)
         for t in self.texts:
-            t.draw()
+            t.text.draw()
         for st in turtle_states:
             if st.visible:
                 self._draw_cursor_polygon(st.shape, st.x, st.y, st.heading,

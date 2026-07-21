@@ -236,18 +236,18 @@ class Turtle:
             (cx + r * math.cos(math.tau * i / 24), cy + r * math.sin(math.tau * i / 24))
             for i in range(24)
         ]
-        eng = self._eng
-        eng.submit(InstantCmd(self._id, lambda: eng.renderer.add_fill(points, rgb)))
+        eng, tid = self._eng, self._id
+        eng.submit(InstantCmd(tid, lambda: eng.renderer.add_fill(tid, points, rgb)))
 
     def stamp(self):
-        st, eng = self._st, self._eng
+        st, eng, tid = self._st, self._eng, self._id
         sid = eng.renderer.reserve_stamp_id()
         shape, x, y = st.shape, st.x, st.y
         heading, stretch = st.heading, st.shape_size
         fill, outline = st.fill_color, st.pen_color
 
-        eng.submit(InstantCmd(self._id, lambda: eng.renderer.add_stamp(
-            sid, shape, x, y, heading, stretch, fill, outline)))
+        eng.submit(InstantCmd(tid, lambda: eng.renderer.add_stamp(
+            sid, tid, shape, x, y, heading, stretch, fill, outline)))
         return sid
 
     def clearstamp(self, stamp_id):
@@ -255,8 +255,8 @@ class Turtle:
         eng.submit(InstantCmd(self._id, lambda: eng.renderer.clear_stamp(stamp_id)))
 
     def clearstamps(self, n=None):
-        eng = self._eng
-        eng.submit(InstantCmd(self._id, lambda: eng.renderer.stamps.clear()))
+        eng, tid = self._eng, self._id
+        eng.submit(InstantCmd(tid, lambda: eng.renderer.clear_stamps_of(tid, n)))
 
     # ---------- پرکردن ----------
 
@@ -273,8 +273,8 @@ class Turtle:
         points = list(st.fill_points)
         st.fill_points = []
         rgb = st.fill_color
-        eng = self._eng
-        eng.submit(InstantCmd(self._id, lambda: eng.renderer.add_fill(points, rgb)))
+        eng, tid = self._eng, self._id
+        eng.submit(InstantCmd(tid, lambda: eng.renderer.add_fill(tid, points, rgb)))
 
     def filling(self):
         return self._st.filling
@@ -308,7 +308,7 @@ class Turtle:
         import arcade
 
         text = str(arg)
-        st, eng = self._st, self._eng
+        st, eng, tid = self._st, self._eng, self._id
         x, y, rgb = st.x, st.y, st.pen_color
         font_name, font_size, *style = font if isinstance(font, (tuple, list)) else (font, 8)
         style_str = " ".join(str(s).lower() for s in style)
@@ -325,9 +325,9 @@ class Turtle:
                 anchor_x=anchor, anchor_y="baseline",
                 bold="bold" in style_str, italic="italic" in style_str,
             )
-            eng.renderer.add_text(t)
+            eng.renderer.add_text(tid, t)
 
-        eng.submit(InstantCmd(self._id, make_text))
+        eng.submit(InstantCmd(tid, make_text))
 
     # ---------- ظاهر ----------
 
@@ -369,8 +369,9 @@ class Turtle:
     # ---------- صفحه (سطح ماژول هم همین‌ها را صدا می‌زند) ----------
 
     def clear(self):
-        eng = self._eng
-        eng.submit(InstantCmd(self._id, eng.renderer.clear_all))
+        """فقط نقاشی‌های همین لاک‌پشت پاک می‌شود (مثل turtle استاندارد)."""
+        eng, tid = self._eng, self._id
+        eng.submit(InstantCmd(tid, lambda: eng.renderer.clear_turtle(tid)))
 
     def reset(self):
         self.clear()

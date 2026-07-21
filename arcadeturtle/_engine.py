@@ -141,7 +141,7 @@ class Engine:
         v = self._visual(cmd.turtle_id)
         if isinstance(cmd, MoveCmd):
             if cmd.pen_down:
-                self.renderer.add_line(cmd.start, cmd.end, cmd.color, cmd.size)
+                self.renderer.add_line(cmd.turtle_id, cmd.start, cmd.end, cmd.color, cmd.size)
             v.x, v.y = cmd.end
         elif isinstance(cmd, RotateCmd):
             v.heading = cmd.end_heading % 360.0

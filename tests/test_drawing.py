@@ -104,6 +104,31 @@ def test_persian_detection_and_shaping():
     assert shape_text("hello") == "hello"
 
 
+def test_turtle_clear_only_removes_own_drawings():
+    """Turtle.clear() فقط نقاشی‌های خودش را پاک می‌کند؛ Screen.clear() همه را.
+
+    این رفتار دقیق ماژول turtle استاندارد است — یک لاک‌پشت نباید با clear()
+    نقاشی‌های لاک‌پشت دیگری (مثلاً تابلوی امتیاز در بازی مار) را پاک کند.
+    """
+    from arcadeturtle import Turtle
+
+    a = Turtle()
+    b = Turtle()
+    a.speed(0)
+    b.speed(0)
+    a.forward(100)   # خط متعلق به a
+    b.forward(50)    # خط متعلق به b
+    eng = get_engine()
+    eng.tick(1 / 60)
+    assert len(eng.renderer.finished_lines) == 2
+
+    a.clear()
+    eng.tick(1 / 60)
+    remaining = eng.renderer.finished_lines
+    assert len(remaining) == 1
+    assert remaining[0].turtle_id == b._id
+
+
 def test_hex_and_float_colors():
     arcadeturtle.pencolor("#ff8000")
     assert get_engine().turtles[0].logical.pen_color == (255, 128, 0)
