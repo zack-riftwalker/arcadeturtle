@@ -9,6 +9,7 @@ from ._engine import get_engine
 from ._errors import ArcadeTurtleError, require_number, resolve_color
 from ._renderer import SHAPE_POLYGONS
 from ._text_fa import PERSIAN_FONT, has_persian, shape_text
+from ._vec2d import Vec2D
 
 _SPEED_NAMES = {"fastest": 0, "fast": 10, "normal": 6, "slow": 3, "slowest": 1}
 
@@ -111,6 +112,44 @@ class Turtle:
         self.goto(0, 0)
         self.setheading(0)
 
+    def teleport(self, x=None, y=None, *, fill_gap=False):
+        """برخلاف goto: نه خط می‌کشد، نه انیمیشن می‌شود — بی‌درنگ جابه‌جا می‌شود.
+
+        اگر در حال fill باشیم، پیش‌فرض این است که پرش را دو تکه‌ی جدا از هم
+        در نظر بگیریم (end_fill قبل از پرش، begin_fill بعدش) تا یک خط پرشده‌ی
+        ناخواسته بین دو نقطه ساخته نشود. fill_gap=True همان پُل را عمداً
+        می‌خواهد، دقیقاً مثل یک goto معمولی.
+        """
+        st = self._st
+        if x is not None:
+            require_number(x, "teleport", "60")
+        if y is not None:
+            require_number(y, "teleport", "60")
+        new_x = float(x) if x is not None else st.x
+        new_y = float(y) if y is not None else st.y
+
+        was_filling = st.filling
+        if was_filling:
+            if fill_gap:
+                self._record_fill_point()  # نقطه‌ی قبل از پرش
+            else:
+                self.end_fill()
+
+        st.x, st.y = new_x, new_y
+        eng, tid = self._eng, self._id
+
+        def snap():
+            v = eng.turtles[tid].visual
+            v.x, v.y = new_x, new_y
+
+        eng.submit(InstantCmd(tid, snap))
+
+        if was_filling:
+            if fill_gap:
+                self._record_fill_point()  # نقطه‌ی بعد از پرش
+            else:
+                self.begin_fill()
+
     def setheading(self, to_angle):
         require_number(to_angle, "setheading", "90")
         st = self._st
@@ -171,7 +210,7 @@ class Turtle:
     # ---------- کوئری‌ها (از state منطقی) ----------
 
     def position(self):
-        return (self._st.x, self._st.y)
+        return Vec2D(self._st.x, self._st.y)
 
     def xcor(self):
         return self._st.x

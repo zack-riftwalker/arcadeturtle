@@ -32,6 +32,7 @@ def setx(x): _t().setx(x)
 def sety(y): _t().sety(y)
 def home(): _t().home()
 def setheading(to_angle): _t().setheading(to_angle)
+def teleport(x=None, y=None, *, fill_gap=False): _t().teleport(x, y, fill_gap=fill_gap)
 
 # ---------- قلم ----------
 

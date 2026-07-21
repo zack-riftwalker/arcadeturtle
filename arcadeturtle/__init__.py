@@ -10,14 +10,15 @@ from .api import (  # صریح، برای ابزارهای تحلیل کد
     isdown, isvisible, left, lt, mainloop, mode, pencolor, pendown,
     pensize, penup, pd, pos, position, pu, register_shape, reset,
     resetscreen, right, rt, screensize, seth, setheading, setpos,
-    setposition, setup, setworldcoordinates, setx, sety, listen, onclick,
-    onkey, onkeypress, onkeyrelease, onscreenclick, ontimer, shape,
+    setposition, setup, setworldcoordinates, setx, sety, teleport, listen,
+    onclick, onkey, onkeypress, onkeyrelease, onscreenclick, ontimer, shape,
     shapesize, showturtle, speed, st, stamp, title, towards, tracer,
     turtles, turtlesize, up, update, width, window_height, window_width,
     write, xcor, ycor,
 )
 from .screen import Screen, ScrolledCanvas, TurtleScreen
 from .turtle_obj import Pen, RawPen, RawTurtle, Turtle
+from ._vec2d import Vec2D
 
 
 def getscreen():

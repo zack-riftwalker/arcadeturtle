@@ -207,3 +207,89 @@ def test_hex_and_float_colors():
     arcadeturtle.colormode(1.0)  # حالا لازم است، مثل turtle استاندارد
     arcadeturtle.pencolor((1.0, 0.0, 0.5))
     assert get_engine().turtles[0].logical.pen_color == (255, 0, 128)
+
+
+# ---------- 10.2: Vec2D + teleport ----------
+
+def test_position_returns_vec2d():
+    from arcadeturtle._vec2d import Vec2D
+
+    t = arcadeturtle.Turtle()
+    assert isinstance(t.position(), Vec2D)
+    assert isinstance(arcadeturtle.position(), Vec2D)
+
+
+def test_goto_accepts_vec2d_arithmetic():
+    """الگوی رایج فیزیک/بازی: goto(pos() + Vec2D(dx, dy))."""
+    from arcadeturtle._vec2d import Vec2D
+
+    t = arcadeturtle.Turtle()
+    t.speed(0)
+    t.goto(t.position() + Vec2D(10, 5))
+    assert t.position() == pytest.approx((10, 5))
+
+
+def test_teleport_moves_instantly_without_drawing_a_line():
+    t = arcadeturtle.Turtle()
+    t.speed(3)  # سرعت غیرصفر — teleport باید همچنان آنی باشد
+    t.pendown()
+    t.teleport(200, 150)
+    assert t.position() == pytest.approx((200, 150))
+    eng = get_engine()
+    eng.tick(1 / 60)
+    assert eng.turtles[t._id].visual.x == pytest.approx(200)  # بدون انیمیشن
+    own_lines = [ln for ln in eng.renderer.finished_lines if ln.turtle_id == t._id]
+    assert own_lines == []
+
+
+def test_teleport_single_axis_keeps_other():
+    t = arcadeturtle.Turtle()
+    t.speed(0)
+    t.goto(10, 20)
+    t.teleport(x=99)
+    assert t.position() == pytest.approx((99, 20))
+    t.teleport(y=5)
+    assert t.position() == pytest.approx((99, 5))
+
+
+def test_teleport_does_not_change_heading():
+    t = arcadeturtle.Turtle()
+    t.speed(0)
+    t.setheading(45)
+    t.teleport(100, 100)
+    assert t.heading() == pytest.approx(45)
+
+
+def _draw_l_shape(t):
+    """سه نقطه (>=۳ لازم است تا یک چندضلعیِ قابل‌پرکردن ساخته شود)."""
+    t.forward(30)
+    t.left(90)
+    t.forward(30)
+
+
+def test_teleport_without_fill_gap_splits_fill_into_two_shapes():
+    t = arcadeturtle.Turtle()
+    t.speed(0)
+    t.begin_fill()
+    _draw_l_shape(t)
+    t.teleport(500, 500)
+    _draw_l_shape(t)
+    t.end_fill()
+    eng = get_engine()
+    eng.tick(1 / 60)
+    own_fills = [f for f in eng.renderer.fills if f.turtle_id == t._id]
+    assert len(own_fills) == 2, "بدون fill_gap باید دو شکل پرشده‌ی جدا بسازد"
+
+
+def test_teleport_with_fill_gap_keeps_single_fill():
+    t = arcadeturtle.Turtle()
+    t.speed(0)
+    t.begin_fill()
+    _draw_l_shape(t)
+    t.teleport(500, 500, fill_gap=True)
+    _draw_l_shape(t)
+    t.end_fill()
+    eng = get_engine()
+    eng.tick(1 / 60)
+    own_fills = [f for f in eng.renderer.fills if f.turtle_id == t._id]
+    assert len(own_fills) == 1, "با fill_gap=True باید یک شکل پرشده‌ی واحد بماند"
