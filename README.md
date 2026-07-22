@@ -1,5 +1,7 @@
 # ArcadeTurtle 🐢
 
+[English 🇬🇧](README.en.md)
+
 کتابخانه‌ای آموزشی: همان دستورهای ماژول استاندارد `turtle` پایتون، اما با
 موتور گرافیکی مدرن **[Arcade](https://api.arcade.academy/)** — حرکت نرم،
 پنجره باکیفیت، و پشتیبانی کامل از متن فارسی در `write()`.
@@ -11,7 +13,7 @@
 ```bash
 python -m venv .venv
 .venv\Scripts\activate        # ویندوز
-pip install -e .
+pip install arcadeturtle
 ```
 
 ## شروع سریع
