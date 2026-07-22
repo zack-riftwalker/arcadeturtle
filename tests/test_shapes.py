@@ -36,6 +36,30 @@ def test_png(tmp_path):
 
 # ---------- register_shape: چندضلعی ساده ----------
 
+def test_custom_polygon_orientation_matches_builtin_convention():
+    """رگرسیون: چندضلعیِ register_shape شده باید دقیقاً همان قرارداد
+    heading=0 را داشته باشد که شکل‌های آماده دارند (نوک رو به شرق در
+    heading=0) — نه ۹۰ درجه اشتباه.
+
+    این باگ واقعی بود: قبلاً فقط BUILTIN_POLYGONS چرخش (x,y)->(y,-x) را
+    می‌گرفتند و چندضلعی‌های ثبت‌شده‌ی کاربر نمی‌گرفتند، چون stdlib هم این
+    تبدیل را برای هر دو یکسان در _polytrafo اعمال می‌کند.
+    """
+    from arcadeturtle._shapes import BUILTIN_POLYGONS, transform_polygon
+
+    custom = ((5, -3), (0, 10), (-5, -3))  # نوکِ رو به شمال، مثل مثال docstring خودِ stdlib
+    at_zero = transform_polygon(custom, heading=0, stretch=(1, 1))
+    nose = max(at_zero, key=lambda p: p[0])
+    assert nose == pytest.approx((10.0, 0.0)), "نوک باید در heading=0 رو به شرق باشد"
+
+    builtin_nose = max(
+        transform_polygon(BUILTIN_POLYGONS["arrow"], heading=0, stretch=(1, 1)),
+        key=lambda p: p[0],
+    )
+    assert nose == pytest.approx(builtin_nose, abs=1e-6), \
+        "قرارداد جهت باید برای چندضلعی سفارشی و شکل‌های آماده یکی باشد"
+
+
 def test_register_polygon_shape_and_use_it():
     Screen().register_shape("diamond", ((0, 20), (20, 0), (0, -20), (-20, 0)))
     assert "diamond" in Screen().getshapes()
