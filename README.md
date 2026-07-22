@@ -29,6 +29,13 @@ turtle.done()
 همین! هر برنامه‌ای که با ماژول `turtle` استاندارد نوشته باشی، معمولاً فقط با
 تغییر همین یک خط `import` روی ArcadeTurtle هم اجرا می‌شود.
 
+پوشش API در سطح ماژول ۱۰۰٪ است (هر نام در `turtle.__all__` استاندارد این‌جا
+هم وجود دارد). برای اثبات این ادعا، هفت «آزمون طلایی» در پوشه‌ی
+[`examples/`](examples/) هستند: اسکریپت‌هایی به سبک رایج آموزش‌های اینترنتی
+(بازی مار، پونگ، فضاپیمای مهاجم، Etch-A-Sketch، شکل ترکیبی، نقاشی با undo،
+نمودار با مختصات جهانی) که فقط با تغییر `import` روی ArcadeTurtle اجرا
+می‌شوند.
+
 ## مثال‌ها
 
 مثال‌ها در پوشه‌ی [`examples/`](examples/) از ساده به پیشرفته مرتب‌اند:
@@ -45,6 +52,12 @@ turtle.done()
 | [`07_click_paint.py`](examples/07_click_paint.py) | رویداد کلیک موس (`onscreenclick`) |
 | [`08_snake_game.py`](examples/08_snake_game.py) | بازی کامل مار، چند لاک‌پشت، تابلوی امتیاز فارسی |
 | [`golden_snake_original.py`](examples/golden_snake_original.py) | یک اسکریپت مار به سبک رایج اینترنتی — فقط با تغییر `import` اجرا می‌شود |
+| [`09_compound_shape_art.py`](examples/09_compound_shape_art.py) | `Shape("compound")`، `addcomponent`، `stamp` |
+| [`10_etch_a_sketch.py`](examples/10_etch_a_sketch.py) | `Turtle.ondrag` — کشیدن با موس |
+| [`11_undo_drawing.py`](examples/11_undo_drawing.py) | نقاشی با کیبورد + `undo()` |
+| [`12_world_coordinates_chart.py`](examples/12_world_coordinates_chart.py) | `setworldcoordinates` — رسم نمودار در واحدهای داده |
+| [`13_pong.py`](examples/13_pong.py) | بازی دونفره، `ontimer`، برخورد |
+| [`14_space_invaders.py`](examples/14_space_invaders.py) | `register_shape` با فایل تصویری، برخورد گلوله/دشمن |
 
 ## جدول سازگاری با ماژول `turtle` استاندارد
 

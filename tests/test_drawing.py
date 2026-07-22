@@ -70,6 +70,33 @@ def test_dot_bakes_circle_fill():
     assert eng.renderer.fills[0].color == (0, 0, 255)
 
 
+def test_dot_accepts_rgb_as_separate_positional_args():
+    """مثل stdlib: dot(size=None, *color) — رنگ می‌تواند سه عدد جدا باشد."""
+    arcadeturtle.speed(0)
+    arcadeturtle.dot(20, 255, 0, 0)
+    eng = get_engine()
+    eng.tick(1 / 60)
+    assert eng.renderer.fills[-1].color == (255, 0, 0)
+
+
+def test_dot_color_only_shorthand_omits_size():
+    """dot("red") بدون size — همان الگوی docstring خودِ stdlib."""
+    arcadeturtle.speed(0)
+    arcadeturtle.dot("red")
+    eng = get_engine()
+    eng.tick(1 / 60)
+    assert eng.renderer.fills[-1].color == (255, 0, 0)
+
+
+def test_dot_bare_call_uses_pencolor():
+    arcadeturtle.speed(0)
+    arcadeturtle.pencolor("green")
+    arcadeturtle.dot()
+    eng = get_engine()
+    eng.tick(1 / 60)
+    assert eng.renderer.fills[-1].color == (0, 128, 0)
+
+
 def test_stamp_and_clearstamp():
     arcadeturtle.speed(0)
     sid = arcadeturtle.stamp()

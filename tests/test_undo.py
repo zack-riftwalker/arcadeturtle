@@ -205,6 +205,15 @@ def test_undo_buffer_caps_at_configured_size():
     assert t.undobufferentries() == 2
 
 
+def test_undobuffersize_constructor_kwarg():
+    """Turtle(undobuffersize=...) — پارامتر سازنده‌ی stdlib، نه فقط setundobuffer بعدی."""
+    t = Turtle(undobuffersize=3)
+    t.speed(0)
+    for _ in range(10):
+        t.forward(1)
+    assert t.undobufferentries() == 3
+
+
 def test_setundobuffer_none_disables_undo():
     t = Turtle()
     t.setundobuffer(None)

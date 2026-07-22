@@ -41,12 +41,12 @@ def pendown(): _t().pendown()
 def isdown(): return _t().isdown()
 def pensize(width=None): return _t().pensize(width)
 def pencolor(*args): return _t().pencolor(*args)
-def speed(s=None): return _t().speed(s)
+def speed(speed=None): return _t().speed(speed)
 
 # ---------- ترسیم پیشرفته ----------
 
 def circle(radius, extent=None, steps=None): _t().circle(radius, extent, steps)
-def dot(size=None, color=None): _t().dot(size, color)
+def dot(size=None, *color): _t().dot(size, *color)
 def stamp(): return _t().stamp()
 def clearstamp(stamp_id): _t().clearstamp(stamp_id)
 def clearstamps(n=None): _t().clearstamps(n)
@@ -209,19 +209,19 @@ def turtles(): return _screen().turtles()
 def getcanvas(): return _screen().getcanvas()
 
 
-def register_shape(*args, **kwargs):
-    return _screen().register_shape(*args, **kwargs)
+def register_shape(name, shape=None):
+    return _screen().register_shape(name, shape)
 
 
 addshape = register_shape
 
 
-def bgpic(*args, **kwargs):
-    return _screen().bgpic(*args, **kwargs)
+def bgpic(picname=None):
+    return _screen().bgpic(picname)
 
 
-def setworldcoordinates(*args, **kwargs):
-    return _screen().setworldcoordinates(*args, **kwargs)
+def setworldcoordinates(llx, lly, urx, ury):
+    return _screen().setworldcoordinates(llx, lly, urx, ury)
 
 
 def textinput(title, prompt):
@@ -230,6 +230,11 @@ def textinput(title, prompt):
 
 def numinput(title, prompt, default=None, minval=None, maxval=None):
     return _screen().numinput(title, prompt, default, minval, maxval)
+
+
+def write_docstringdict(filename="turtle_docstringdict"):
+    """فقط برای سازگاری import — در stdlib فایل ترجمه‌ی docstring خودِ
+    ماژول turtle را می‌سازد؛ چیزی که ArcadeTurtle به آن نیازی ندارد."""
 
 
 # ---------- نام‌های کوتاه ----------

@@ -18,7 +18,8 @@ from .api import (  # صریح، برای ابزارهای تحلیل کد
     onscreenclick, ontimer, shape,
     shapesize, showturtle, speed, st, stamp, textinput, title, towards,
     tracer, turtles, turtlesize, undo, undobufferentries, setundobuffer, up,
-    update, numinput, width, window_height, window_width, write, xcor, ycor,
+    update, numinput, width, window_height, window_width, write,
+    write_docstringdict, xcor, ycor,
 )
 from .screen import Screen, ScrolledCanvas, TurtleScreen
 from .turtle_obj import Pen, RawPen, RawTurtle, Turtle

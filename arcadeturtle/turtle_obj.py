@@ -70,14 +70,15 @@ class _UndoPenAttr:
 
 
 class Turtle:
-    def __init__(self, shape: str = "classic", visible: bool = True):
+    def __init__(self, shape: str = "classic", undobuffersize: int = DEFAULT_UNDO_BUFFER_SIZE,
+                 visible: bool = True):
         eng = get_engine()
         self._id = eng.new_turtle()
         eng.turtle_objects.add(self)  # تا Screen.reset() بتواند پیدایش کند
         self._pen_color_raw = "black"
         self._fill_color_raw = "black"
         self._undo_stack: list = []
-        self._undo_buffer_size = DEFAULT_UNDO_BUFFER_SIZE
+        self._undo_buffer_size = undobuffersize
         if eng.mode_name == "logo":
             self._st.heading = 90.0  # شمال — با هر دو state (منطقی+بصری) هماهنگ
             eng.turtles[self._id].visual.heading = 90.0
@@ -456,13 +457,27 @@ class Turtle:
             self.left(w)
         self.left(-w2)
 
-    def dot(self, size=None, color=None):
+    def dot(self, size=None, *color):
+        """نقطه‌ای به قطر size؛ رنگ می‌تواند یک مقدار رنگ باشد یا سه عدد
+        جداگانه‌ی r, g, b (مثل stdlib). بدون size هم می‌شود، حتی
+        dot("red") — یعنی همان آرگومان اول رنگ است، نه اندازه."""
         st = self._st
-        if size is None:
-            size = max(st.pen_size + 4, st.pen_size * 2)
+        if not color:
+            if isinstance(size, (str, tuple)):
+                rgb = resolve_color(size)
+                size = max(st.pen_size + 4, st.pen_size * 2)
+            else:
+                rgb = st.pen_color
+                if size is None:
+                    size = max(st.pen_size + 4, st.pen_size * 2)
+                else:
+                    require_number(size, "dot", "10")
         else:
-            require_number(size, "dot", "10")
-        rgb = resolve_color(color) if color is not None else st.pen_color
+            if size is None:
+                size = max(st.pen_size + 4, st.pen_size * 2)
+            else:
+                require_number(size, "dot", "10")
+            rgb = resolve_color(color[0] if len(color) == 1 else tuple(color))
         cx, cy = st.x, st.y
         r = size / 2
         points = [
@@ -862,8 +877,9 @@ class RawTurtle(Turtle):
     چون ArcadeTurtle فقط یک پنجره دارد، آرگومان canvas پذیرفته و نادیده
     گرفته می‌شود. زیرکلاس است نه تابع، تا isinstance() هم درست کار کند."""
 
-    def __init__(self, canvas=None, shape="classic", visible=True):
-        super().__init__(shape=shape, visible=visible)
+    def __init__(self, canvas=None, shape="classic",
+                 undobuffersize=DEFAULT_UNDO_BUFFER_SIZE, visible=True):
+        super().__init__(shape=shape, undobuffersize=undobuffersize, visible=visible)
 
 
 RawPen = RawTurtle
