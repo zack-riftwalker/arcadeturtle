@@ -16,9 +16,9 @@ from .api import (  # صریح، برای ابزارهای تحلیل کد
     sety, shapetransform, shearfactor, teleport, tilt, tiltangle, listen,
     onclick, ondrag, onkey, onkeypress, onkeyrelease, onrelease,
     onscreenclick, ontimer, shape,
-    shapesize, showturtle, speed, st, stamp, title, towards, tracer,
-    turtles, turtlesize, undo, undobufferentries, setundobuffer, up, update,
-    width, window_height, window_width, write, xcor, ycor,
+    shapesize, showturtle, speed, st, stamp, textinput, title, towards,
+    tracer, turtles, turtlesize, undo, undobufferentries, setundobuffer, up,
+    update, numinput, width, window_height, window_width, write, xcor, ycor,
 )
 from .screen import Screen, ScrolledCanvas, TurtleScreen
 from .turtle_obj import Pen, RawPen, RawTurtle, Turtle

@@ -56,15 +56,21 @@ class _Screen:
         set_colormode(cmode)
 
     def mode(self, mode=None):
-        """فقط 'standard' پشتیبانی می‌شود؛ 'logo'/'world' زاویه و مبدأ را
-        عوض می‌کنند که هنوز پیاده نشده — به‌جای رفتار نادرست خاموش، خطا می‌دهد."""
+        """'standard' (heading=0 شرق، پادساعتگرد) یا 'logo' (heading=0 شمال،
+        ساعتگرد) یا 'world' (با setworldcoordinates). مثل stdlib، تغییر mode
+        همه‌ی لاک‌پشت‌ها را ریست می‌کند."""
+        eng = get_engine()
         if mode is None:
-            return "standard"
-        if mode != "standard":
+            return eng.mode_name
+        mode = mode.lower()
+        if mode not in ("standard", "logo", "world"):
             raise ArcadeTurtleError(
-                f"mode('{mode}') هنوز در ArcadeTurtle پشتیبانی نمی‌شود؛ فقط 'standard'.\n"
-                "mode('logo') و mode('world') در فازهای بعدی اضافه می‌شوند."
+                f"mode باید یکی از 'standard', 'logo', 'world' باشد، نه {mode!r}"
             )
+        eng.mode_name = mode
+        if mode in ("standard", "logo"):
+            eng.renderer.set_world_coords(None)
+        self.reset()
 
     def getcanvas(self):
         raise ArcadeTurtleError(
@@ -152,16 +158,66 @@ class _Screen:
 
     resetscreen = reset
 
-    # ---------- پشتیبانی‌نشده‌ها با پیام تمیز ----------
+    def setworldcoordinates(self, llx, lly, urx, ury):
+        """مختصات دلخواه کاربر — مستطیل (llx,lly)-(urx,ury) به کل پنجره
+        کشیده می‌شود. اگر نسبت x/y آن با پنجره یکی نباشد، زاویه‌ها کج‌نما
+        می‌شوند (دقیقاً همان هشداری که خودِ turtle استاندارد هم می‌دهد)."""
+        for name, val in (("llx", llx), ("lly", lly), ("urx", urx), ("ury", ury)):
+            require_number(val, "setworldcoordinates", "0")
+        if urx <= llx or ury <= lly:
+            raise ArcadeTurtleError(
+                "setworldcoordinates: گوشه‌ی بالا-راست باید از پایین-چپ بزرگ‌تر باشد."
+            )
+        eng = get_engine()
+        if eng.mode_name != "world":
+            self.mode("world")  # این خودش reset را صدا می‌زند
+        eng.renderer.set_world_coords((llx, lly, urx, ury))
 
-    def setworldcoordinates(self, *args, **kwargs):
-        raise ArcadeTurtleError(
-            "setworldcoordinates هنوز در ArcadeTurtle پشتیبانی نمی‌شود.\n"
-            "از مختصات معمولی (مبدأ وسط صفحه) استفاده کن."
+    def bgpic(self, picname=None):
+        """تصویر پس‌زمینه (PNG/GIF)، وسط‌چین با اندازه‌ی طبیعی خودش —
+        picname='nopic' یعنی حذفش کن؛ بدون آرگومان یعنی نام فعلی را بگو."""
+        eng = get_engine()
+        r = eng.renderer
+        if picname is None:
+            return r.bg_name
+        if picname == "nopic":
+            r.clear_bgpic()
+            return
+        import arcade
+        from pathlib import Path
+
+        p = Path(picname)
+        if not p.exists():
+            raise ArcadeTurtleError(f"فایل تصویر پس‌زمینه '{picname}' پیدا نشد.")
+        try:
+            texture = arcade.load_texture(p)
+        except Exception as e:
+            raise ArcadeTurtleError(
+                f"بارگذاری تصویر پس‌زمینه '{picname}' شکست خورد: {e}"
+            ) from None
+        r.set_bgpic(picname, texture)
+
+    def textinput(self, title, prompt):
+        """دیالوگ ساده‌ی ورودی متن (با tkinter) — اگر کاربر لغو کند None می‌دهد."""
+        try:
+            import tkinter.simpledialog as simpledialog
+        except ImportError:
+            raise ArcadeTurtleError(
+                "textinput به ماژول tkinter نیاز دارد که روی این سیستم در دسترس نیست."
+            ) from None
+        return simpledialog.askstring(title, prompt)
+
+    def numinput(self, title, prompt, default=None, minval=None, maxval=None):
+        """دیالوگ ساده‌ی ورودی عدد (با tkinter) — اگر کاربر لغو کند None می‌دهد."""
+        try:
+            import tkinter.simpledialog as simpledialog
+        except ImportError:
+            raise ArcadeTurtleError(
+                "numinput به ماژول tkinter نیاز دارد که روی این سیستم در دسترس نیست."
+            ) from None
+        return simpledialog.askfloat(
+            title, prompt, initialvalue=default, minvalue=minval, maxvalue=maxval
         )
-
-    def bgpic(self, *args, **kwargs):
-        raise ArcadeTurtleError("bgpic هنوز در ArcadeTurtle پشتیبانی نمی‌شود.")
 
     def register_shape(self, name, shape=None):
         get_engine().renderer.shapes.register(name, shape)

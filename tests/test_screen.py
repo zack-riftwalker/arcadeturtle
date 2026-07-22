@@ -46,14 +46,6 @@ def test_screen_events_bind_same_registry():
     assert hits == [1]
 
 
-def test_unsupported_features_raise_clean_error():
-    s = Screen()
-    for call in (s.setworldcoordinates, s.bgpic):
-        with pytest.raises(ArcadeTurtleError) as e:
-            call()
-        assert "پشتیبانی نمی‌شود" in str(e.value)
-
-
 def test_multiple_turtles_independent_state():
     a = Turtle()
     b = Turtle()
@@ -162,11 +154,13 @@ def test_delay_getter_setter_roundtrip():
     assert Screen().delay() == 25
 
 
-def test_mode_getter_and_unsupported_change():
+def test_mode_getter_default_is_standard():
     assert arcadeturtle.mode() == "standard"
-    with pytest.raises(ArcadeTurtleError) as e:
-        arcadeturtle.mode("logo")
-    assert "پشتیبانی نمی‌شود" in str(e.value)
+
+
+def test_mode_rejects_unknown_value():
+    with pytest.raises(ArcadeTurtleError):
+        arcadeturtle.mode("sideways")
 
 
 def test_getcanvas_raises_friendly_error():
@@ -176,14 +170,13 @@ def test_getcanvas_raises_friendly_error():
         Screen().getcanvas()
 
 
-def test_module_level_unsupported_forwarding():
-    """bgpic/register_shape/setworldcoordinates باید هم در سطح ماژول در دسترس
-    باشند و هم همان خطای مهربانِ Screen را بدهند."""
+def test_module_level_register_shape_still_validates_input():
+    """bgpic/register_shape/setworldcoordinates اکنون واقعی‌اند، ولی باید
+    همچنان روی ورودی نامعتبر خطای مهربان بدهند."""
     for fn in (
-        lambda: arcadeturtle.bgpic("x.png"),
-        lambda: arcadeturtle.register_shape("x", ((0, 0),)),
+        lambda: arcadeturtle.bgpic("does_not_exist_xyz.png"),
+        lambda: arcadeturtle.register_shape("x", ((0, 0),)),  # کمتر از ۳ نقطه
         lambda: arcadeturtle.addshape("x", ((0, 0),)),
-        lambda: arcadeturtle.setworldcoordinates(0, 0, 1, 1),
     ):
         with pytest.raises(ArcadeTurtleError):
             fn()

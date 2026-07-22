@@ -224,6 +224,14 @@ def setworldcoordinates(*args, **kwargs):
     return _screen().setworldcoordinates(*args, **kwargs)
 
 
+def textinput(title, prompt):
+    return _screen().textinput(title, prompt)
+
+
+def numinput(title, prompt, default=None, minval=None, maxval=None):
+    return _screen().numinput(title, prompt, default, minval, maxval)
+
+
 # ---------- نام‌های کوتاه ----------
 
 fd = forward

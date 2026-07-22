@@ -78,6 +78,9 @@ class Turtle:
         self._fill_color_raw = "black"
         self._undo_stack: list = []
         self._undo_buffer_size = DEFAULT_UNDO_BUFFER_SIZE
+        if eng.mode_name == "logo":
+            self._st.heading = 90.0  # شمال — با هر دو state (منطقی+بصری) هماهنگ
+            eng.turtles[self._id].visual.heading = 90.0
         if shape != "classic":
             self.shape(shape)
         if not visible:
@@ -130,6 +133,23 @@ class Turtle:
 
     def _to_units(self, deg: float) -> float:
         return deg * self._st.angle_full_circle / 360.0
+
+    def _internal_to_display(self, internal_deg: float) -> float:
+        """درجه‌ی داخلی (همیشه صفر=شرق، پادساعتگرد) → عددی که heading()
+        برمی‌گرداند: در حالت logo صفر=شمال و جهت ساعتگرد است."""
+        full = self._st.angle_full_circle
+        units = self._to_units(internal_deg)
+        if self._eng.mode_name == "logo":
+            return (full / 4.0 - units) % full
+        return units % full
+
+    def _display_to_internal(self, display_angle: float) -> float:
+        full = self._st.angle_full_circle
+        if self._eng.mode_name == "logo":
+            units = (full / 4.0 - display_angle) % full
+        else:
+            units = display_angle
+        return self._to_deg(units)
 
     def _push_undo(self, record) -> None:
         if self._undo_buffer_size <= 0:
@@ -236,7 +256,7 @@ class Turtle:
     def setheading(self, to_angle):
         require_number(to_angle, "setheading", "90")
         st = self._st
-        to_angle_deg = self._to_deg(to_angle)
+        to_angle_deg = self._display_to_internal(to_angle)
         # مثل turtle اصلی: چرخش از کوتاه‌ترین مسیر
         delta = (to_angle_deg - st.heading) % 360.0
         if delta > 180.0:
@@ -363,7 +383,7 @@ class Turtle:
         return self._st.y
 
     def heading(self):
-        return self._to_units(self._st.heading)
+        return self._internal_to_display(self._st.heading)
 
     def towards(self, x, y=None):
         if y is None:
@@ -371,7 +391,7 @@ class Turtle:
                 x, y = x.position()
             else:
                 x, y = x
-        return self._to_units(self._st.towards(x, y))
+        return self._internal_to_display(self._st.towards(x, y))
 
     def distance(self, x, y=None):
         if y is None:
@@ -728,13 +748,14 @@ class Turtle:
         self._pen_color_raw = "black"
         self._fill_color_raw = "black"
         old, new = st.goto(0, 0)
-        st.set_heading(0)
         eng, tid = self._eng, self._id
+        home_heading = 90.0 if eng.mode_name == "logo" else 0.0  # مثل stdlib: reset به شمال در حالت logo
+        st.set_heading(home_heading)
 
         def snap():
             v = eng.turtles[tid].visual
             v.x, v.y = 0.0, 0.0
-            v.heading = 0.0
+            v.heading = home_heading
             v.pen_down = True
             v.pen_size = 1
             v.pen_color = (0, 0, 0)

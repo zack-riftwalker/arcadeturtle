@@ -81,12 +81,27 @@ class Renderer:
         self._shape_list: ShapeElementList | None = None
         self._next_stamp_id = 1
         self._text_warned = False
+        self.world_coords = None  # setworldcoordinates؛ None = مختصات معمولی
+        self.bg_texture = None
+        self.bg_name = "nopic"
 
     # ---------- تغذیه بافر (مختصات Turtle) ----------
 
     def set_size(self, width: int, height: int) -> None:
         self.width, self.height = width, height
         self._dirty = True
+
+    def set_world_coords(self, world) -> None:
+        self.world_coords = world
+        self._dirty = True
+
+    def set_bgpic(self, name: str, texture) -> None:
+        self.bg_name = name
+        self.bg_texture = texture
+
+    def clear_bgpic(self) -> None:
+        self.bg_name = "nopic"
+        self.bg_texture = None
 
     def add_line(self, turtle_id: int, start: Point, end: Point, color: Color,
                  width: float) -> None:
@@ -187,7 +202,7 @@ class Renderer:
     # ---------- رسم ----------
 
     def _to_a(self, p: Point) -> tuple[float, float]:
-        return to_arcade(p[0], p[1], self.width, self.height)
+        return to_arcade(p[0], p[1], self.width, self.height, self.world_coords)
 
     def _rebuild(self) -> None:
         sl = ShapeElementList()
@@ -242,6 +257,13 @@ class Renderer:
 
     def draw(self, turtle_states) -> None:
         """turtle_states: وضعیت‌های بصری قابل‌نمایش (iterable of TurtleState)."""
+        if self.bg_texture is not None:
+            # وسط‌چین با اندازه‌ی طبیعی خودش، مثل bgpic استاندارد — کش داده
+            # نمی‌شود که کل پنجره را پر کند
+            from arcade.types.rect import XYWH
+            cx, cy = self.width / 2, self.height / 2
+            rect = XYWH(cx, cy, self.bg_texture.width, self.bg_texture.height)
+            arcade.draw_texture_rect(self.bg_texture, rect)
         if self._dirty or self._shape_list is None:
             self._rebuild()
         self._shape_list.draw()

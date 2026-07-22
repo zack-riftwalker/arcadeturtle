@@ -176,7 +176,7 @@ class EventRegistry:
         from ._coords import to_turtle
 
         r = self.engine.renderer
-        return to_turtle(x, y, r.width, r.height)
+        return to_turtle(x, y, r.width, r.height, r.world_coords)
 
     def _handle_turtle_press(self, x: float, y: float, button: int) -> None:
         tx, ty = self._to_turtle(x, y)

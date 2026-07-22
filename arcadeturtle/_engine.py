@@ -43,6 +43,10 @@ class TurtleRuntime:
 class Engine:
     def __init__(self):
         self.mode = Mode.RECORDING
+        # توجه: این «mode» حالت اجرای موتور است (RECORDING/PLAYING)، نه
+        # turtle-mode ی standard/logo/world که Screen.mode() کنترل می‌کند —
+        # آن یکی عمداً نام دیگری دارد تا تداخل نکنند.
+        self.mode_name = "standard"
         self.queue: deque = deque()
         self.turtles: dict[int, TurtleRuntime] = {}
         # شیءهای Turtle کاربر — weak تا لاک‌پشت دورریخته نشتی حافظه نسازد.

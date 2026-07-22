@@ -69,10 +69,11 @@ turtle.done()
 جداگانه برای هر لاک‌پشت) • ابزار: `pen` (گرفتن/ست‌کردن دسته‌ای وضعیت قلم)،
 `getturtle`/`getpen`، `clone`، `begin_poly`/`end_poly`/`get_poly` (ضبط
 چندضلعی دلخواه برای `register_shape` بعدی) • صفحه: `bgcolor`، `title`،
-`colormode`، `clear`، `reset`، `done`/`mainloop` • کلاس‌ها:
-`Turtle()`/`Pen()`/`RawTurtle()`/`RawPen()` (چند نمونه مستقل)، `Screen()`
-(سینگلتون) با `setup`، `window_width`/`window_height`، `exitonclick`،
-`bye`، `Vec2D`.
+`colormode`، `mode` (`standard`/`logo`/`world`)، `setworldcoordinates`،
+`bgpic`، `textinput`، `numinput`، `clear`، `reset`، `done`/`mainloop` •
+کلاس‌ها: `Turtle()`/`Pen()`/`RawTurtle()`/`RawPen()` (چند نمونه مستقل)،
+`Screen()` (سینگلتون) با `setup`، `window_width`/`window_height`،
+`exitonclick`، `bye`، `Vec2D`.
 
 `clear`/`reset` دقیقاً مثل turtle اصلی تفکیک شده‌اند: `Turtle.clear()` فقط
 نقاشی‌های همان لاک‌پشت را پاک می‌کند، `Screen.clear()` همه‌چیز را، و
@@ -105,13 +106,17 @@ turtle.done()
   همان دستورهایی که stdlib هم undo می‌کند پوشش داده شده: حرکت، چرخش، مهر،
   نوشته، `dot`، `begin_fill`/`end_fill`، و ویژگی‌های قلم. تغییرات ظاهری مثل
   `shape`/`tilt`/`resizemode` در stdlib هم قابل undo نیستند.
+- **`bgpic`**: تصویر پس‌زمینه با اندازه‌ی طبیعی خودش وسط‌چین می‌شود (مثل
+  stdlib) — کش داده نمی‌شود که کل پنجره را پر کند.
+- **`textinput`/`numinput`**: با `tkinter.simpledialog` پیاده شده‌اند (چون
+  Arcade دیالوگ ورودی آماده ندارد)؛ یک پنجره‌ی جدا از پنجره‌ی اصلی باز
+  می‌شود. اگر tkinter روی سیستم در دسترس نباشد، خطای مهربان می‌دهند.
 
 ### ❌ هنوز پشتیبانی نمی‌شود
 
-`setworldcoordinates`، `bgpic`، `mode`، `textinput`/`numinput`،
 `getscreen()` چندپنجره‌ای (فقط یک پنجره در هر زمان)، و `write(move=True)`.
 
-این‌ها همگی به‌صراحت خطای فارسی مهربان می‌دهند، نه رفتار خاموش یا نادرست.
+این‌ها به‌صراحت خطای فارسی مهربان می‌دهند، نه رفتار خاموش یا نادرست.
 
 دلیل `write(move=True)`: برای جابه‌جا کردن قلم به انتهای متن باید عرض متن
 اندازه‌گیری شود که به پنجره‌ی باز نیاز دارد، ولی `write()` معمولاً قبل از
